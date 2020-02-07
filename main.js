@@ -16,6 +16,34 @@ function makeFullscreen() {
     requestFullScreen.call(scr);
 }
 
+document.getElementById("screen").addEventListener("mousedown", function(e) {
+    pointerLock();
+});
+
+function pointerLock() {
+    var body = document.body;
+    body.requestPointerLock = body.requestPointerLock || body.mozRequestPointerLock || body.webkitRequestPointerLock;
+    body.requestPointerLock();
+    g_pointer_lock_at=now();
+    document.getElementById("screen").style="cursor:none;";
+}
+function pointerUnlock() {
+    document.exitPointerLock = document.exitPointerLock    || document.mozExitPointerLock;
+    document.exitPointerLock();
+    
+}
+var g_pointer_locked;
+document.onpointerlockchange=function(event) {
+    if(document.pointerLockElement) {
+        g_pointer_locked=true;
+    } else {
+        g_pointer_locked=false;
+        var elem=document.getElementById("screen");
+        if(elem)elem.style="cursor:default;";    
+    }
+}
+
+
 function onResizeWindow() {
     var w=window.innerWidth, h=window.innerHeight;
     updateWindowSize(w,h);
@@ -74,7 +102,7 @@ Moyai.insertLayer(g_main_layer);
 g_main_layer.setViewport(g_viewport3d);
 
 var g_main_camera = new PerspectiveCamera( 45*Math.PI/180 , SCRW / SCRH , 0.1, 1000);
-g_main_camera.setLoc(3,5,0);
+g_main_camera.setLoc(-5,5,0);
 g_main_camera.setLookAt(vec3.fromValues(0,0,0), vec3.fromValues(0,1,0));
 g_main_layer.setCamera(g_main_camera);
 
@@ -119,67 +147,16 @@ var f=vec3.fromValues(sz,sz,sz);
 var g=vec3.fromValues(sz,sz,-sz);
 var h=vec3.fromValues(-sz,sz,-sz);
 
-if(1) {
-    var geom = new FaceGeometry(8,6*2);
+
+
+function setUVByIndex(geom,ind) {
+    var uvary = new Float32Array(4);
+    g_base_deck.getUVFromIndex(uvary,ind,0,0,0);
     
-    geom.setPosition3v(0,a);// A red
-    geom.setPosition3v(1,b); // B blue
-    geom.setPosition3v(2,c); // C yellow
-    geom.setPosition3v(3,d); // D green
-    geom.setPosition3v(4,e); // E white
-    geom.setPosition3v(5,f); // F purple
-    geom.setPosition3v(6,g); // G white
-    geom.setPosition3v(7,h); // H white    
-
-    geom.setColor(0, 1,0,0,1);
-    geom.setColor(1, 0,0,1,1);
-    geom.setColor(2, 1,1,0,1);
-    geom.setColor(3, 0,1,0,1);
-    geom.setColor(4, 1,1,1,1);
-    geom.setColor(5, 1,0,1,1);
-    geom.setColor(6, 1,1,1,1);
-    geom.setColor(7, 1,1,1,1);                        
-    
-    // bottom
-    geom.setFaceInds(0, 0,3,1); // ADB
-    geom.setFaceInds(1, 3,2,1); // DCB
-    // top
-    geom.setFaceInds(2, 7,5,6); // HFG
-    geom.setFaceInds(3, 4,5,7); // EFH
-    // left
-    geom.setFaceInds(4, 4,3,0); // EDA
-    geom.setFaceInds(5, 4,7,3); // EHD
-    // right
-    geom.setFaceInds(6, 5,1,2); // FBC
-    geom.setFaceInds(7, 5,2,6); // FCG
-    // front
-    geom.setFaceInds(8, 4,0,1); // EAB
-    geom.setFaceInds(9, 4,1,5); // EBF
-    // rear
-    geom.setFaceInds(10, 7,2,3); // HCD
-    geom.setFaceInds(11, 7,6,2); // HGC
-
-    var p = new Prop3D();
-    p.setGeom(geom);
-    p.setMaterial(new PrimColorShaderMaterial());
-    p.setScl(1,1,1);
-    p.setLoc(0,0,0);
-    p.prop3DPoll=function(dt) {
-//        this.loc[1]+=0.02;//Math.cos(this.accum_time)*3;
-//        this.loc[1]=Math.sin(this.accum_time)*3;
-//        this.rot[0]+=0.1;
-//        this.rot[1]+=0.1;        
-        return true;
-    }
-    g_main_layer.insertProp(p);
-}
-
-function setNinja(geom) {
-    var kk=1.0/256.0*8;
-    var uv_lt=vec2.fromValues(0,0);
-    var uv_rt=vec2.fromValues(kk,0);
-    var uv_lb=vec2.fromValues(0,kk);
-    var uv_rb=vec2.fromValues(kk,kk);
+    var uv_lt=vec2.fromValues(uvary[0],uvary[1]);
+    var uv_rt=vec2.fromValues(uvary[2],uvary[1]);
+    var uv_lb=vec2.fromValues(uvary[0],uvary[3]);
+    var uv_rb=vec2.fromValues(uvary[2],uvary[3]);
 
     geom.setPosition3v(0,a); geom.setPosition3v(1,b); geom.setPosition3v(2,c); geom.setPosition3v(3,d);//-y
     geom.setPosition3v(4,e); geom.setPosition3v(5,f); geom.setPosition3v(6,g); geom.setPosition3v(7,h);//+y
@@ -216,44 +193,34 @@ function setNinja(geom) {
     geom.setFaceInds(10, 20,21,22); // HCD
     geom.setFaceInds(11, 20,22,23); // HGC    
 }
-        
-if(1) {
+
+var g_colshader = new DefaultColorShaderMaterial();
+function putCube(loc,ind,col) {
     var geom = new FaceGeometry(6*4,6*2);
-    setNinja(geom);
-    geom.setColor(8, 1,0,0,1);
-    geom.setColor(16, 1,1,1,0.1);    
-    
+    setUVByIndex(geom,ind);
     var p = new Prop3D();
     p.setGeom(geom);
-    p.setMaterial(new DefaultColorShaderMaterial());
+    p.setMaterial(g_colshader);
     p.setTexture(g_base_tex);
     p.setScl(1,1,1);
-    p.setLoc(2,0,0);
-    p.setColor(vec4.fromValues(1,1,1,1));
+    p.setLoc(loc);
+    p.setColor(col);
     g_main_layer.insertProp(p);
-    p.prop3DPoll=function(dt) {
-        this.setColor(1,1,1,0.5+Math.cos(this.accum_time)*0.5);
-        if(this.poll_count%100==0) {
-            this.setEulerRot(0,0.5,0);
-        } else if(this.poll_count%100==50){
-            this.setEulerRot(0,0,0);            
+}
+// upside Y is 0
+function putGround(x0,z0,x1,z1) {
+    for(var z=z0;z<=z1;z++) {
+        for(var x=x0;x<=x1;x++) {
+            var r=1;
+            if((x+z)%2==0) r=0.8;
+            var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
+            putCube(vec3.fromValues(x,-1,z),4,col);
         }
-        return true;
-    }
-    if(1) {
-        var chp=new Prop3D();
-        chp.setGeom(geom);
-        chp.setMaterial(new DefaultColorShaderMaterial());
-        chp.setTexture(g_base_tex);
-        chp.setScl(0.3,0.3,0.3);
-        chp.setLoc(1,0,0); // relative to parent
-        chp.setColor(vec4.fromValues(1,1,1,1));
-        p.addChild(chp);
     }
 }
 
-
-
+var sz=16;
+putGround(-sz,-sz,sz,sz);
 
 
 tangentMax = function(theta,absmax) {
@@ -299,7 +266,9 @@ function animate() {
             if(g_keyboard.getKey('w')) g_main_camera.loc[2]-=0.3;
             if(g_keyboard.getKey('s')) g_main_camera.loc[2]+=0.3;
             if(g_keyboard.getKey('k')) g_main_camera.loc[1]+=0.3;
-            if(g_keyboard.getKey('l')) g_main_camera.loc[1]-=0.3;                        
+            if(g_keyboard.getKey('l')) g_main_camera.loc[1]-=0.3;
+            if(g_keyboard.getKey('l')) g_main_camera.loc[1]-=0.3;
+            if(g_keyboard.getKey('Escape')) pointerUnlock();
         }
         
         if(g_mouse) {
@@ -312,12 +281,12 @@ function animate() {
             pitch+=dx/250;
 
             var nose;
-            /*
+
             nose=vec3.fromValues( g_main_camera.loc[0] + 1.0 * Math.cos(pitch),
                                   g_main_camera.loc[1] + tangentMax(yaw),
                                   g_main_camera.loc[2] + 1.0 * Math.sin(this.pitch) );
-            */
-            nose =vec3.fromValues(0,0,0);
+
+//            nose =vec3.fromValues(0,0,0);
 
 
             g_main_camera.setLookAt(nose, vec3.fromValues(0,1,0));            
