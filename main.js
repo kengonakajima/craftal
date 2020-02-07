@@ -105,6 +105,8 @@ var g_main_camera = new PerspectiveCamera( 45*Math.PI/180 , SCRW / SCRH , 0.1, 1
 g_main_camera.setLoc(-5,5,0);
 g_main_camera.setLookAt(vec3.fromValues(0,0,0), vec3.fromValues(0,1,0));
 g_main_layer.setCamera(g_main_camera);
+g_main_camera.vel = vec3.fromValues(0,0,0);
+
 
 var g_base_tex = new Texture();
 g_base_tex.loadPNG( "./atlas.png", 256,256 );
@@ -199,6 +201,7 @@ function putCube(loc,ind,col) {
     var geom = new FaceGeometry(6*4,6*2);
     setUVByIndex(geom,ind);
     var p = new Prop3D();
+    p.enable_frustum_culling = false;
     p.setGeom(geom);
     p.setMaterial(g_colshader);
     p.setTexture(g_base_tex);
@@ -255,20 +258,28 @@ function animate() {
 
     if(g_main_camera) {
         var t=now()-started_at;
-        if(0) {
-            g_main_camera.loc[0]=Math.cos(t/3)*8;
-            g_main_camera.loc[1]+=0.01;        
-            g_main_camera.loc[2]=Math.sin(t/3)*8;
+        var gravity = -10;
+        g_main_camera.vel[1] += gravity * dt;
+        var nextloc = vec3.clone(g_main_camera.loc);
+        nextloc[0]+=g_main_camera.vel[0] * dt;
+        nextloc[1]+=g_main_camera.vel[1] * dt;
+        nextloc[2]+=g_main_camera.vel[2] * dt;        
+        if(nextloc[1]<1) {
+            nextloc[1]=1;
+            g_main_camera.vel[1]=0;
         }
+        vec3.set(g_main_camera.loc,nextloc[0],nextloc[1],nextloc[2]);
+
+        var front=0,side=0;
         if(g_keyboard) {
-            if(g_keyboard.getKey('a')) g_main_camera.loc[0]-=0.3;
-            if(g_keyboard.getKey('d')) g_main_camera.loc[0]+=0.3;
-            if(g_keyboard.getKey('w')) g_main_camera.loc[2]-=0.3;
-            if(g_keyboard.getKey('s')) g_main_camera.loc[2]+=0.3;
-            if(g_keyboard.getKey('k')) g_main_camera.loc[1]+=0.3;
-            if(g_keyboard.getKey('l')) g_main_camera.loc[1]-=0.3;
-            if(g_keyboard.getKey('l')) g_main_camera.loc[1]-=0.3;
+            if(g_keyboard.getKey('a')) side-=1;
+            if(g_keyboard.getKey('d')) side+=1;
+            if(g_keyboard.getKey('w')) front+=1;
+            if(g_keyboard.getKey('s')) front-=1;
             if(g_keyboard.getKey('Escape')) pointerUnlock();
+            if(g_keyboard.getKey(' ')) {
+                g_main_camera.vel[1]=3;
+            }
         }
         
         if(g_mouse) {
@@ -280,13 +291,21 @@ function animate() {
             if(yaw<-Math.PI/2) yaw=-Math.PI/2;
             pitch+=dx/250;
 
-            var nose;
+            var nose=vec3.fromValues( g_main_camera.loc[0] + 1.0 * Math.cos(pitch),
+                                      g_main_camera.loc[1] + tangentMax(yaw),
+                                      g_main_camera.loc[2] + 1.0 * Math.sin(this.pitch) );
 
-            nose=vec3.fromValues( g_main_camera.loc[0] + 1.0 * Math.cos(pitch),
-                                  g_main_camera.loc[1] + tangentMax(yaw),
-                                  g_main_camera.loc[2] + 1.0 * Math.sin(this.pitch) );
+            g_main_camera.vel[0]*=0.92;
+            g_main_camera.vel[2]*=0.92;            
 
-//            nose =vec3.fromValues(0,0,0);
+            var side_pitch=pitch;
+            if(side<0) side_pitch=pitch-Math.PI/2;
+            else if(side>0)side_pitch=pitch+Math.PI/2;
+            
+            var k=1;
+            g_main_camera.vel[0]+=Math.cos(pitch)*k*front + Math.cos(side_pitch)*k*Math.abs(side);
+            g_main_camera.vel[2]+=Math.sin(pitch)*k*front + Math.sin(side_pitch)*k*Math.abs(side);
+
 
 
             g_main_camera.setLookAt(nose, vec3.fromValues(0,1,0));            
