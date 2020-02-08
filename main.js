@@ -106,7 +106,15 @@ g_main_camera.setLoc(-5,5,0);
 g_main_camera.setLookAt(vec3.fromValues(0,0,0), vec3.fromValues(0,1,0));
 g_main_layer.setCamera(g_main_camera);
 g_main_camera.vel = vec3.fromValues(0,0,0);
+g_main_camera.nose = vec3.fromValues(0,0,0);
 
+var g_hud_camera = new OrthographicCamera(-SCRW/2,SCRW/2,SCRH/2,-SCRH/2);
+g_hud_camera.setLoc(0,0);
+
+var g_hud_layer = new Layer();
+Moyai.insertLayer(g_hud_layer);
+g_hud_layer.setViewport(g_viewport2d);
+g_hud_layer.setCamera( g_hud_camera );
 
 var g_base_tex = new Texture();
 g_base_tex.loadPNG( "./atlas.png", 256,256 );
@@ -217,7 +225,7 @@ function putGround(x0,z0,x1,z1) {
             var r=1;
             if((x+z)%2==0) r=0.8;
             var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
-            putCube(vec3.fromValues(x,-1,z),4,col);
+            putCube(vec3.fromValues(x+0.5,-1+0.5,z+0.5),4,col);
         }
     }
 }
@@ -225,8 +233,96 @@ function putGround(x0,z0,x1,z1) {
 var sz=16;
 putGround(-sz,-sz,sz,sz);
 
+function isHitGround(v) {
+    return (v[0]>-sz && v[0]<sz+1 && v[1]>0 && v[1]<1 && v[2]>-sz && v[2]<sz+1);
+}
 
-tangentMax = function(theta,absmax) {
+// cursor
+
+
+
+
+var linemat=new PrimColorShaderMaterial();
+var linegeom = new LineGeometry(24,12);
+setLineBoxGeom(linegeom,0.505,0.505,0.505,WHITE);
+
+var g_cursor_prop = new Prop3D();
+g_cursor_prop.setGeom(linegeom);
+g_cursor_prop.setMaterial(linemat);
+g_main_layer.insertProp(g_cursor_prop);
+g_cursor_prop.setBlockLoc = function(x,y,z) {
+    this.setScl(1.0001,1.0001,1.0001); // 1.0で問題ないはずなのに、ちょっと大きくしないとブロックの中に隠れるようになってしまう。。    
+    this.setLoc(Math.floor(x)+0.5,Math.floor(y)+0.5,Math.floor(z)+0.5);
+}
+g_cursor_prop.setBoundsLoc = function(minv,maxv) {
+    var sx=maxv[0]-minv[0], sy=maxv[1]-minv[1], sz=maxv[2]-minv[2];
+    this.setScl(sx,sy,sz);
+    var d=vec3.fromValues(sx/2,sy/2,sz/2);
+    this.setLoc(minv[0]+d[0],minv[1]+d[1],minv[2]+d[2]);
+}
+
+
+g_cursor_prop.prop3DPoll = function(dt) {
+    var find_fluid=false;
+    var find_spore=false;    
+
+
+    var cam=g_main_camera.loc;
+    var nose = g_main_camera.nose;
+    if(!this.dir)this.dir=vec3.create();
+    vec3.set(this.dir, nose[0]-cam[0], nose[1]-cam[1], nose[2]-cam[2]);
+    if(!this.simray) this.simray=new SimpleRay();
+    this.simray.update(cam,this.dir);
+    var simray = this.simray;
+    var hitpos=[], hitnorm=[], hitbound_minv=null, hitbound_maxv=null;
+    var last_hit_pos;
+    
+    traceVoxelRay( function(x,y,z) {
+        if(y==-1) return true; else return false;
+    }, cam, this.dir, 15, hitpos, hitnorm );
+    var hx=Math.floor(hitpos[0]),hy=Math.floor(hitpos[1]),hz=Math.floor(hitpos[2]);
+    if(hitnorm[0]!=0) {
+        if(hitnorm[0]==1) hx=hitpos[0]-hitnorm[0]; else hx=hitpos[0];
+    } else if(hitnorm[1]!=0) {
+        if(hitnorm[1]==1) hy=hitpos[1]-hitnorm[1]; else hy=hitpos[1];
+    } else if(hitnorm[2]!=0) {
+        if(hitnorm[2]==1) hz=hitpos[2]-hitnorm[2]; else hz=hitpos[2];
+    } else {
+        //nohit
+        this.setVisible(false);
+        this.cursor_hit_norm=null;
+        return true;
+    }
+
+    // カーソル見えてる
+    this.setVisible(true);
+    this.cursor_hit_norm=hitnorm;
+
+    
+    g_cursor_prop.hitbound_minv=hitbound_minv;
+    g_cursor_prop.hitbound_maxv=hitbound_maxv;    
+    if(hitbound_minv&&hitbound_maxv) {
+        g_cursor_prop.setBoundsLoc(vec3.fromValues(hitbound_minv[0],hitbound_minv[1],hitbound_minv[2]),
+                                   vec3.fromValues(hitbound_maxv[0],hitbound_maxv[1],hitbound_maxv[2]));
+    } else {        
+        g_cursor_prop.setBlockLoc(hx,hy,hz);
+    }
+
+    return true;
+}
+
+///////////////////
+var g_cross_prop = new Prop2D();
+g_cross_prop.setDeck(g_base_deck);
+g_cross_prop.setIndex(5);
+g_cross_prop.setScl(32);
+g_cross_prop.setLoc(0,0);
+g_cross_prop.setColor(Color.fromValues(1,1,1,0.4));
+g_hud_layer.insertProp(g_cross_prop);
+
+
+///////////////////////////////
+function tangentMax(theta,absmax) {
     var cs=Math.cos(theta);
     var sn=Math.sin(theta);
     if(cs==0) {
@@ -263,8 +359,9 @@ function animate() {
         var nextloc = vec3.clone(g_main_camera.loc);
         nextloc[0]+=g_main_camera.vel[0] * dt;
         nextloc[1]+=g_main_camera.vel[1] * dt;
-        nextloc[2]+=g_main_camera.vel[2] * dt;        
-        if(nextloc[1]<1) {
+        nextloc[2]+=g_main_camera.vel[2] * dt;
+        if(isHitGround(nextloc)) {
+//        if(nextloc[1]<1) {
             nextloc[1]=1;
             g_main_camera.vel[1]=0;
         }
@@ -291,10 +388,6 @@ function animate() {
             if(yaw<-Math.PI/2) yaw=-Math.PI/2;
             pitch+=dx/250;
 
-            var nose=vec3.fromValues( g_main_camera.loc[0] + 1.0 * Math.cos(pitch),
-                                      g_main_camera.loc[1] + tangentMax(yaw),
-                                      g_main_camera.loc[2] + 1.0 * Math.sin(this.pitch) );
-
             g_main_camera.vel[0]*=0.92;
             g_main_camera.vel[2]*=0.92;            
 
@@ -306,9 +399,12 @@ function animate() {
             g_main_camera.vel[0]+=Math.cos(pitch)*k*front + Math.cos(side_pitch)*k*Math.abs(side);
             g_main_camera.vel[2]+=Math.sin(pitch)*k*front + Math.sin(side_pitch)*k*Math.abs(side);
 
+            g_main_camera.nose = vec3.fromValues( g_main_camera.loc[0] + 1.0 * Math.cos(pitch),
+                                                  g_main_camera.loc[1] + tangentMax(yaw),
+                                                  g_main_camera.loc[2] + 1.0 * Math.sin(pitch) );
 
 
-            g_main_camera.setLookAt(nose, vec3.fromValues(0,1,0));            
+            g_main_camera.setLookAt(g_main_camera.nose, vec3.fromValues(0,1,0));            
         }
     }
     
