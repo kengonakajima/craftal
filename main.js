@@ -20,6 +20,8 @@ document.getElementById("screen").addEventListener("mousedown", function(e) {
     pointerLock();
 });
 
+to_i=Math.floor;
+
 function pointerLock() {
     var body = document.body;
     body.requestPointerLock = body.requestPointerLock || body.mozRequestPointerLock || body.webkitRequestPointerLock;
@@ -204,6 +206,72 @@ function setUVByIndex(geom,ind) {
     geom.setFaceInds(11, 20,22,23); // HGC    
 }
 
+
+//////////////////
+var SHAPE_CUBE = 0;
+
+class Chunk extends Prop3D {
+    // 巨大な地形を表現する必要がないので、3次元配列ボクセルじゃなくて、単純な配列にしておく
+    // コリジョンも地面だけでいい気がしてきた.
+    constructor() {
+        super();
+        this.blocks=[];
+
+        this.enable_frustum_culling = false;
+        this.setMaterial(g_colshader);
+        this.setTexture(g_base_tex);
+        this.setScl(1,1,1);
+        this.setColor(vec4.fromValues(1,1,1,1));
+    }
+    findBlock(ix,iy,iz) {
+        ix=to_i(ix);
+        iy=to_i(iy);
+        iz=to_i(iz);
+        for(var i in this.blocks) {
+            var b=this.blocks[i];
+            if(b.x==ix && b.y==iy && b.z==iz) return i;
+        }
+        return -1;
+    }
+    setBlock(ix,iy,iz,shapeid,dkind,col4) {
+        ix=to_i(ix);
+        iy=to_i(iy);
+        iz=to_i(iz);        
+        var block={x:ix,y:iy,z:iz,shape:shapeid,deck_index:dkind,col:col4};                
+        var ind = this.findBlock(ix,iy,iz);
+        if(ind>=0) {
+            this.blocks[ind] = block;
+            console.log("updated a block",block);            
+        } else {
+            this.blocks.push(block);
+            console.log("pushed a new block",block);
+        }
+    }
+    updateMesh() {
+        // block count
+        var num_block = this.blocks.length;
+        // vert count
+        var num_vert = num_block * 6*4;
+        // face count
+        var num_face = num_block * 6*2;
+        var geom = new FaceGeometry(num_vert,num_face);
+
+        var viofs=0;
+        for(var bi=0;bi<num_block;bi++) {
+            var b=this.blocks[bi];
+            // 0,0,0のブロック基準点は(0,0,0)にあるようにする
+            pushBox24Verts(geom,0.5,0.5,0.5,b.x+0.5,b.y+0.5,b.z,0.5,viofs);
+            真っ黒になってるよ
+            viofs+=24;
+        }
+        console.log("updateMesh: geom:",geom);
+        this.setGeom(geom);    // TODO: dispose older one     
+    }
+};
+
+
+////////////////////
+
 var g_colshader = new DefaultColorShaderMaterial();
 function putCube(loc,ind,col) {
     var geom = new FaceGeometry(6*4,6*2);
@@ -229,17 +297,37 @@ function putGround(x0,z0,x1,z1) {
         }
     }
 }
-
-var sz=16;
-putGround(-sz,-sz,sz,sz);
+function putGroundChunk(x0,z0,x1,z1) {
+    var chk=new Chunk();
+    for(var z=z0;z<=z1;z++) {
+        for(var x=x0;x<=x1;x++) {
+            var r=1;
+            if((x+z)%2==0) r=0.8;
+            var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
+            chk.setBlock(x,-1,z,SHAPE_CUBE,4,col);
+        }
+    }
+    chk.updateMesh();
+    chk.setLoc(0,0,0);
+    g_main_layer.insertProp(chk);
+}
+var sz=12;
+//putGround(-sz,-sz,sz,sz);
+putGroundChunk(-sz,-sz,sz,sz);
 
 function isHitGround(v) {
     return (v[0]>-sz && v[0]<sz+1 && v[1]>0 && v[1]<1 && v[2]>-sz && v[2]<sz+1);
 }
 
+
+
+
+
+
+/////////////////
+/////////////////
+
 // cursor
-
-
 
 
 var linemat=new PrimColorShaderMaterial();
