@@ -128,10 +128,8 @@ g_base_deck.setSize(32,32,8,8);
 
 
 
+////////////////////////
 
-
-
-// 
 //
 //   +y
 //    ^
@@ -140,72 +138,35 @@ g_base_deck.setSize(32,32,8,8);
 //    /|              /|
 //   / |             / |
 //  E ------------- F  |
-//  |  |            |  |      -z               7   6
-//  |  |            |  |      /               4   5
+//  |  |            |  |      -z(north) 
+//  |  |            |  |      /         
 //  |  D -----------|- C
 //  | /             | /
-//  |/              |/                         3   2
-//  A ------------- B     >   +x              0   1
+//  |/              |/                  
+//  A ------------- B     >   +x        
 //  -d,-d,d
+// +z south
+//
 
+WHITE = vec4.fromValues(1,1,1,1);
 
-var sz=0.5;
-var a=vec3.fromValues(-sz,-sz,sz);
-var b=vec3.fromValues(sz,-sz,sz);
-var c=vec3.fromValues(sz,-sz,-sz);
-var d=vec3.fromValues(-sz,-sz,-sz);
-var e=vec3.fromValues(-sz,sz,sz);
-var f=vec3.fromValues(sz,sz,sz);
-var g=vec3.fromValues(sz,sz,-sz);
-var h=vec3.fromValues(-sz,sz,-sz);
-
-
-
-function setUVByIndex(geom,ind) {
-    var uvary = new Float32Array(4);
-    g_base_deck.getUVFromIndex(uvary,ind,0,0,0);
-    
-    var uv_lt=vec2.fromValues(uvary[0],uvary[1]);
-    var uv_rt=vec2.fromValues(uvary[2],uvary[1]);
-    var uv_lb=vec2.fromValues(uvary[0],uvary[3]);
-    var uv_rb=vec2.fromValues(uvary[2],uvary[3]);
-
-    geom.setPosition3v(0,a); geom.setPosition3v(1,b); geom.setPosition3v(2,c); geom.setPosition3v(3,d);//-y
-    geom.setPosition3v(4,e); geom.setPosition3v(5,f); geom.setPosition3v(6,g); geom.setPosition3v(7,h);//+y
-    geom.setPosition3v(8,a); geom.setPosition3v(9,b); geom.setPosition3v(10,f); geom.setPosition3v(11,e);//+z
-    geom.setPosition3v(12,c); geom.setPosition3v(13,d); geom.setPosition3v(14,h); geom.setPosition3v(15,g);//-z
-    geom.setPosition3v(16,b); geom.setPosition3v(17,c); geom.setPosition3v(18,g); geom.setPosition3v(19,f);//+x
-    geom.setPosition3v(20,d); geom.setPosition3v(21,a); geom.setPosition3v(22,e); geom.setPosition3v(23,h);//-x
-
-    geom.setUV2v(0,uv_lb); geom.setUV2v(1,uv_rb); geom.setUV2v(2,uv_rt); geom.setUV2v(3,uv_lt); // abcd
-    geom.setUV2v(4,uv_lb); geom.setUV2v(5,uv_rb); geom.setUV2v(6,uv_rt); geom.setUV2v(7,uv_lt); // efgh
-    geom.setUV2v(8,uv_lb); geom.setUV2v(9,uv_rb); geom.setUV2v(10,uv_rt); geom.setUV2v(11,uv_lt); // abfe
-    geom.setUV2v(12,uv_lb); geom.setUV2v(13,uv_rb); geom.setUV2v(14,uv_rt); geom.setUV2v(15,uv_lt); // cdhg
-    geom.setUV2v(16,uv_lb); geom.setUV2v(17,uv_rb); geom.setUV2v(18,uv_rt); geom.setUV2v(19,uv_lt); // bcgf
-    geom.setUV2v(20,uv_lb); geom.setUV2v(21,uv_rb); geom.setUV2v(22,uv_rt); geom.setUV2v(23,uv_lt); // daeh
-    
-    for(var i=0;i<24;i++) geom.setColor(i, 1,1,1,1);
-    
-    // bottom
-    geom.setFaceInds(0, 0,3,1); // ADB
-    geom.setFaceInds(1, 3,2,1); // DCB
-    // top
-    geom.setFaceInds(2, 7,5,6); // HFG
-    geom.setFaceInds(3, 4,5,7); // EFH
-    // +z abf, afe
-    geom.setFaceInds(4, 8,9,10); // abf
-    geom.setFaceInds(5, 8,10,11); // afe
-    // -z cdh, chg
-    geom.setFaceInds(6, 12,13,14); // cdh
-    geom.setFaceInds(7, 12,14,15); // chg
-    // front
-    geom.setFaceInds(8, 16,17,18); // EAB
-    geom.setFaceInds(9, 16,18,19); // EBF
-    // rear
-    geom.setFaceInds(10, 20,21,22); // HCD
-    geom.setFaceInds(11, 20,22,23); // HGC    
+// LineSegmentsで箱を描画するために必要な24個の頂点
+function setLineBoxGeom(geom,xsz,ysz,zsz,col) {
+    var a=vec3.fromValues(-xsz,-ysz,zsz);// A
+    var b=vec3.fromValues(xsz,-ysz,zsz); // B
+    var c=vec3.fromValues(xsz,-ysz,-zsz); // C 
+    var d=vec3.fromValues(-xsz,-ysz,-zsz); // D
+    var e=vec3.fromValues(-xsz,ysz,zsz); // E 
+    var f=vec3.fromValues(xsz,ysz,zsz); // F 
+    var g=vec3.fromValues(xsz,ysz,-zsz); // G 
+    var h=vec3.fromValues(-xsz,ysz,-zsz); // H
+    var ary=[a,b, b,f, f,e, e,a,  b,c, a,d, d,c, c,g,  g,h, h,d, f,g, e,h];
+    for(var i=0;i<24;i++) {
+        geom.setPosition3v(i,ary[i]);
+        geom.setColor4v(i,col);
+        geom.setIndex(i,i);
+    }
 }
-
 
 //////////////////
 var SHAPE_CUBE = 0;
@@ -237,14 +198,12 @@ class Chunk extends Prop3D {
         ix=to_i(ix);
         iy=to_i(iy);
         iz=to_i(iz);        
-        var block={x:ix,y:iy,z:iz,shape:shapeid,deck_index:dkind,col:col4};                
+        var block={x:ix,y:iy,z:iz,shape:shapeid,deck_index:dkind,color:col4};                
         var ind = this.findBlock(ix,iy,iz);
         if(ind>=0) {
             this.blocks[ind] = block;
-            console.log("updated a block",block);            
         } else {
             this.blocks.push(block);
-            console.log("pushed a new block",block);
         }
     }
     updateMesh() {
@@ -256,13 +215,86 @@ class Chunk extends Prop3D {
         var num_face = num_block * 6*2;
         var geom = new FaceGeometry(num_vert,num_face);
 
-        var viofs=0;
+
+
+        // 
+        //
+        //   +y
+        //    ^
+        //                     d,d,-d
+        //     H ------------- G
+        //    /|              /|
+        //   / |             / |
+        //  E ------------- F  |
+        //  |  |            |  |      -z               7   6
+        //  |  |            |  |      /               4   5
+        //  |  D -----------|- C
+        //  | /             | /
+        //  |/              |/                         3   2
+        //  A ------------- B     >   +x              0   1
+        //  -d,-d,d
+        
+        var vi=0,fi=0;
         for(var bi=0;bi<num_block;bi++) {
-            var b=this.blocks[bi];
+            var block=this.blocks[bi];
             // 0,0,0のブロック基準点は(0,0,0)にあるようにする
-            pushBox24Verts(geom,0.5,0.5,0.5,b.x+0.5,b.y+0.5,b.z,0.5,viofs);
-            真っ黒になってるよ
-            viofs+=24;
+
+//            geom.need_positions_update=true;
+
+            var uvary = new Float32Array(4);
+            g_base_deck.getUVFromIndex(uvary,block.deck_index,0,0,0);
+            var uv_lt=vec2.fromValues(uvary[0],uvary[1]);
+            var uv_rt=vec2.fromValues(uvary[2],uvary[1]);
+            var uv_lb=vec2.fromValues(uvary[0],uvary[3]);
+            var uv_rb=vec2.fromValues(uvary[2],uvary[3]);
+            var x=block.x, y=block.y, z=block.z;
+            var a=vec3.fromValues(0+x,0+y,1+z);
+            var b=vec3.fromValues(1+x,0+y,1+z);
+            var c=vec3.fromValues(1+x,0+y,0+z);
+            var d=vec3.fromValues(0+x,0+y,0+z);
+            var e=vec3.fromValues(0+x,1+y,1+z);
+            var f=vec3.fromValues(1+x,1+y,1+z);
+            var g=vec3.fromValues(1+x,1+y,0+z);
+            var h=vec3.fromValues(0+x,1+y,0+z);
+
+            
+            geom.setPosition3v(0+vi,a); geom.setPosition3v(1+vi,b); geom.setPosition3v(2+vi,c); geom.setPosition3v(3+vi,d);//-y
+            geom.setPosition3v(4+vi,e); geom.setPosition3v(5+vi,f); geom.setPosition3v(6+vi,g); geom.setPosition3v(7+vi,h);//+y
+            geom.setPosition3v(8+vi,a); geom.setPosition3v(9+vi,b); geom.setPosition3v(10+vi,f); geom.setPosition3v(11+vi,e);//+z
+            geom.setPosition3v(12+vi,c); geom.setPosition3v(13+vi,d); geom.setPosition3v(14+vi,h); geom.setPosition3v(15+vi,g);//-z
+            geom.setPosition3v(16+vi,b); geom.setPosition3v(17+vi,c); geom.setPosition3v(18+vi,g); geom.setPosition3v(19+vi,f);//+x
+            geom.setPosition3v(20+vi,d); geom.setPosition3v(21+vi,a); geom.setPosition3v(22+vi,e); geom.setPosition3v(23+vi,h);//-x
+
+            geom.setUV2v(0+vi,uv_lb); geom.setUV2v(1+vi,uv_rb); geom.setUV2v(2+vi,uv_rt); geom.setUV2v(3+vi,uv_lt); // abcd
+            geom.setUV2v(4+vi,uv_lb); geom.setUV2v(5+vi,uv_rb); geom.setUV2v(6+vi,uv_rt); geom.setUV2v(7+vi,uv_lt); // efgh
+            geom.setUV2v(8+vi,uv_lb); geom.setUV2v(9+vi,uv_rb); geom.setUV2v(10+vi,uv_rt); geom.setUV2v(11+vi,uv_lt); // abfe
+            geom.setUV2v(12+vi,uv_lb); geom.setUV2v(13+vi,uv_rb); geom.setUV2v(14+vi,uv_rt); geom.setUV2v(15+vi,uv_lt); // cdhg
+            geom.setUV2v(16+vi,uv_lb); geom.setUV2v(17+vi,uv_rb); geom.setUV2v(18+vi,uv_rt); geom.setUV2v(19+vi,uv_lt); // bcgf
+            geom.setUV2v(20+vi,uv_lb); geom.setUV2v(21+vi,uv_rb); geom.setUV2v(22+vi,uv_rt); geom.setUV2v(23+vi,uv_lt); // daeh
+            
+            for(var i=0;i<24;i++) geom.setColor4v(i+vi, block.color);
+            
+    
+            // bottom
+            geom.setFaceInds(0+fi, 0+vi,3+vi,1+vi); // ADB
+            geom.setFaceInds(1+fi, 3+vi,2+vi,1+vi); // DCB
+            // top
+            geom.setFaceInds(2+fi, 7+vi,5+vi,6+vi); // HFG
+            geom.setFaceInds(3+fi, 4+vi,5+vi,7+vi); // EFH
+            // +z abf, afe
+            geom.setFaceInds(4+fi, 8+vi,9+vi,10+vi); // abf
+            geom.setFaceInds(5+fi, 8+vi,10+vi,11+vi); // afe
+            // -z cdh, chg
+            geom.setFaceInds(6+fi, 12+vi,13+vi,14+vi); // cdh
+            geom.setFaceInds(7+fi, 12+vi,14+vi,15+vi); // chg
+            // front
+            geom.setFaceInds(8+fi, 16+vi,17+vi,18+vi); // EAB
+            geom.setFaceInds(9+fi, 16+vi,18+vi,19+vi); // EBF
+            // rear
+            geom.setFaceInds(10+fi, 20+vi,21+vi,22+vi); // HCD
+            geom.setFaceInds(11+fi, 20+vi,22+vi,23+vi); // HGC
+            vi+=24;
+            fi+=12;
         }
         console.log("updateMesh: geom:",geom);
         this.setGeom(geom);    // TODO: dispose older one     
@@ -311,8 +343,7 @@ function putGroundChunk(x0,z0,x1,z1) {
     chk.setLoc(0,0,0);
     g_main_layer.insertProp(chk);
 }
-var sz=12;
-//putGround(-sz,-sz,sz,sz);
+var sz=20;
 putGroundChunk(-sz,-sz,sz,sz);
 
 function isHitGround(v) {
@@ -436,7 +467,7 @@ function animate() {
 
     if(now_time > last_print_at+1000) {
         last_print_at=now_time;
-        document.getElementById("status").innerHTML = "FPS:"+fps+ "props:" + g_main_layer.props.length + "draw3d:" + Moyai.draw_count_3d + " skip3d:" + Moyai.skip_count_3d;
+        document.getElementById("status").innerHTML = "FPS:"+fps+ "props:" + g_main_layer.props.length + "draw3d:" + Moyai.draw_count_3d + " skip3d:" + Moyai.skip_count_3d + " loc:" + g_main_camera.loc;
         fps=0;
     }
 
