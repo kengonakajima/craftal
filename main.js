@@ -1,3 +1,5 @@
+to_i=Math.floor;
+//
 
 var g_stop_render=false;
 function stopRender() {
@@ -24,11 +26,17 @@ document.getElementById("screen").addEventListener("mousedown", function(e) {
     pointerLock();
 });
 document.addEventListener("mousedown", function(e) {
-       console.log(g_cursor_prop) ;
- 
+    console.log(g_cursor_prop.cursor_hit_pos) ;
+    if(g_cursor_prop.cursor_hit_pos) {
+        var x=to_i(g_cursor_prop.cursor_hit_pos[0]);
+        var y=to_i(g_cursor_prop.cursor_hit_pos[1]);
+        var z=to_i(g_cursor_prop.cursor_hit_pos[2]);
+        var col=vec4.fromValues(range(0,0.5),range(0,0.5),range(0,0.5),1);
+        createNewChunk(x,y,z,SHAPE_CUBE,4,col);
+    }
 });
 
-to_i=Math.floor;
+
 
 function pointerLock() {
     var body = document.body;
@@ -191,6 +199,7 @@ class Chunk extends Prop3D {
         this.setMaterial(g_colshader);
         this.setTexture(g_base_tex);
         this.setScl(1,1,1);
+        this.setLoc(0,0,0);
         this.setColor(vec4.fromValues(1,1,1,1));
     }
     findBlock(ix,iy,iz) {
@@ -338,7 +347,7 @@ function putGround(x0,z0,x1,z1) {
         }
     }
 }
-function putGroundChunk(x0,z0,x1,z1) {
+function createGroundChunk(x0,z0,x1,z1) {
     var chk=new Chunk();
     for(var z=z0;z<=z1;z++) {
         for(var x=x0;x<=x1;x++) {
@@ -349,13 +358,20 @@ function putGroundChunk(x0,z0,x1,z1) {
         }
     }
     chk.updateMesh();
-    chk.setLoc(0,0,0);
     g_main_layer.insertProp(chk);
+    return chk;
 }
 var g_ground_sz=20;
-putGroundChunk(-g_ground_sz,-g_ground_sz,g_ground_sz,g_ground_sz);
+var g_ground_chk=createGroundChunk(-g_ground_sz,-g_ground_sz,g_ground_sz,g_ground_sz);
 
 
+function createNewChunk(x,y,z,shape,dkind,col) {
+    var chk=new Chunk();
+    chk.setBlock(x,y,z,shape,dkind,col);
+    chk.updateMesh();
+    g_main_layer.insertProp(chk);
+    return chk;
+}
 
 
 
