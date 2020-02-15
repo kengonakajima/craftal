@@ -28,9 +28,9 @@ document.getElementById("screen").addEventListener("mousedown", function(e) {
 document.addEventListener("mousedown", function(e) {
     console.log(g_cursor_prop.cursor_hit_pos) ;
     if(g_cursor_prop.cursor_hit_pos) {
-        var x=to_i(g_cursor_prop.cursor_hit_pos[0]);
-        var y=to_i(g_cursor_prop.cursor_hit_pos[1]);
-        var z=to_i(g_cursor_prop.cursor_hit_pos[2]);
+        var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
+        var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
+        var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
         var col=vec4.fromValues(range(0,0.5),range(0,0.5),range(0,0.5),1);
         createNewChunk(x,y,z,SHAPE_CUBE,4,col);
     }
@@ -126,6 +126,7 @@ g_main_camera.setLookAt(vec3.fromValues(0,0,0), vec3.fromValues(0,1,0));
 g_main_layer.setCamera(g_main_camera);
 g_main_camera.vel = vec3.fromValues(0,0,0);
 g_main_camera.nose = vec3.fromValues(0,0,0);
+g_main_camera.flying=false;
 
 var g_hud_camera = new OrthographicCamera(-SCRW/2,SCRW/2,SCRH/2,-SCRH/2);
 g_hud_camera.setLoc(0,0);
@@ -289,10 +290,25 @@ class Chunk extends Prop3D {
             geom.setUV2v(12+vi,uv_lb); geom.setUV2v(13+vi,uv_rb); geom.setUV2v(14+vi,uv_rt); geom.setUV2v(15+vi,uv_lt); // cdhg
             geom.setUV2v(16+vi,uv_lb); geom.setUV2v(17+vi,uv_rb); geom.setUV2v(18+vi,uv_rt); geom.setUV2v(19+vi,uv_lt); // bcgf
             geom.setUV2v(20+vi,uv_lb); geom.setUV2v(21+vi,uv_rb); geom.setUV2v(22+vi,uv_rt); geom.setUV2v(23+vi,uv_lt); // daeh
+
+
+            var bc=block.color;
+            var sidecol0=vec4.fromValues(bc[0]*0.9,bc[1]*0.9,bc[2]*0.9,1);
+            var sidecol1=vec4.fromValues(bc[0]*0.85,bc[1]*0.85,bc[2]*0.85,1);
+            var sidecol2=vec4.fromValues(bc[0]*0.8,bc[1]*0.8,bc[2]*0.8,1);
+            var sidecol3=vec4.fromValues(bc[0]*0.75,bc[1]*0.75,bc[2]*0.75,1);                        
             
-            for(var i=0;i<24;i++) geom.setColor4v(i+vi, block.color);
+            // bottom
+            for(var i=0;i<4;i++) geom.setColor4v(i+vi, block.color);
+            // top
+            for(var i=4;i<8;i++) geom.setColor4v(i+vi, block.color);
+            // side
+            for(var i=8;i<12;i++) geom.setColor4v(i+vi, sidecol0);
+            for(var i=12;i<16;i++) geom.setColor4v(i+vi, sidecol1);
+            for(var i=16;i<20;i++) geom.setColor4v(i+vi, sidecol2);
+            for(var i=20;i<24;i++) geom.setColor4v(i+vi, sidecol3);            
+
             
-    
             // bottom
             geom.setFaceInds(0+fi, 0+vi,3+vi,1+vi); // ADB
             geom.setFaceInds(1+fi, 3+vi,2+vi,1+vi); // DCB
@@ -488,7 +504,10 @@ function animate() {
     if(g_main_camera) {
         var t=now()-started_at;
         var gravity = -10;
-        g_main_camera.vel[1] += gravity * dt;
+        if(g_main_camera.flying) {
+            gravity=0;
+        } 
+        g_main_camera.vel[1] += gravity * dt;        
         var nextloc = vec3.clone(g_main_camera.loc);
         nextloc[0]+=g_main_camera.vel[0] * dt;
         nextloc[1]+=g_main_camera.vel[1] * dt;
@@ -512,6 +531,27 @@ function animate() {
             if(g_keyboard.getKey('Escape')) pointerUnlock();
             if(g_keyboard.getKey(' ')) {
                 g_main_camera.vel[1]=3;
+                var t=now();
+                if(g_main_camera.jump_at && g_main_camera.last_jump_key==false) {
+                    var dt=t-g_main_camera.jump_at;
+                    if(dt<0.2) {
+                        g_main_camera.flying= !g_main_camera.flying;
+                    }
+                }
+                if(g_main_camera.flying) {
+                    if(g_keyboard.mod_shift) {
+                        g_main_camera.vel[1]=-2;
+                    } else {
+                        g_main_camera.vel[1]=2;                        
+                    }
+                }
+                g_main_camera.jump_at=now();
+                g_main_camera.last_jump_key=true;
+            } else {
+                g_main_camera.last_jump_key=false;
+                if(g_main_camera.flying) {
+                    g_main_camera.vel[1]=0;
+                }
             }
         }
         
