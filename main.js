@@ -347,13 +347,8 @@ function putGroundChunk(x0,z0,x1,z1) {
     chk.setLoc(0,0,0);
     g_main_layer.insertProp(chk);
 }
-var sz=20;
-putGroundChunk(-sz,-sz,sz,sz);
-
-function isHitGround(v) {
-    return (v[0]>-sz && v[0]<sz+1 && v[1]>0 && v[1]<1 && v[2]>-sz && v[2]<sz+1);
-}
-
+var g_ground_sz=20;
+putGroundChunk(-g_ground_sz,-g_ground_sz,g_ground_sz,g_ground_sz);
 
 
 
@@ -401,6 +396,7 @@ g_cursor_prop.prop3DPoll = function(dt) {
     var last_hit_pos;
     
     traceVoxelRay( function(x,y,z) {
+        if(x<-g_ground_sz || z<-g_ground_sz || x>g_ground_sz || z>g_ground_sz)return false;
         if(y==-1) return true; else return false;
     }, cam, this.dir, 15, hitpos, hitnorm );
     var hx=Math.floor(hitpos[0]),hy=Math.floor(hitpos[1]),hz=Math.floor(hitpos[2]);
@@ -483,8 +479,11 @@ function animate() {
         nextloc[0]+=g_main_camera.vel[0] * dt;
         nextloc[1]+=g_main_camera.vel[1] * dt;
         nextloc[2]+=g_main_camera.vel[2] * dt;
-        if(isHitGround(nextloc)) {
-//        if(nextloc[1]<1) {
+        if(nextloc[0]<-g_ground_sz) nextloc[0]=-g_ground_sz;
+        if(nextloc[0]>g_ground_sz) nextloc[0]=g_ground_sz;
+        if(nextloc[2]<-g_ground_sz) nextloc[2]=-g_ground_sz;
+        if(nextloc[2]>g_ground_sz) nextloc[2]=g_ground_sz;
+        if(nextloc[1]<1) {
             nextloc[1]=1;
             g_main_camera.vel[1]=0;
         }
