@@ -17,7 +17,7 @@ function makeFullscreen() {
 }
 
 document.addEventListener("keydown", function(e) {
-    e.preventDefault();
+    if(e.code == "Space") e.preventDefault();
 });
 document.getElementById("screen").addEventListener("mousedown", function(e) {
     pointerLock();
