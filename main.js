@@ -16,6 +16,9 @@ function makeFullscreen() {
     requestFullScreen.call(scr);
 }
 
+document.addEventListener("keydown", function(e) {
+    e.preventDefault();
+});
 document.getElementById("screen").addEventListener("mousedown", function(e) {
     pointerLock();
 });
@@ -81,12 +84,13 @@ Moyai.init(SCRW,SCRH);
 Moyai.clearColor=Color.fromValues(0.5,0.5,0.5,1);
 var screen = document.getElementById("screen");
 var canvas=Moyai.getDomElement();
-canvas.style="width:100%; height:100%";
+canvas.style="width:100%; height:100%;";
 screen.appendChild(canvas);
 
 
 var g_keyboard = new Keyboard();
 g_keyboard.setupBrowser(window);
+g_keyboard.preventDefault=true;
 var g_mouse = new Mouse();
 g_mouse.setupBrowser(window,screen);
 
