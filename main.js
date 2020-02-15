@@ -16,11 +16,16 @@ function makeFullscreen() {
     requestFullScreen.call(scr);
 }
 
+
 document.addEventListener("keydown", function(e) {
     if(e.code == "Space") e.preventDefault();
 });
 document.getElementById("screen").addEventListener("mousedown", function(e) {
     pointerLock();
+});
+document.addEventListener("mousedown", function(e) {
+       console.log(g_cursor_prop) ;
+ 
 });
 
 to_i=Math.floor;
@@ -392,7 +397,7 @@ g_cursor_prop.prop3DPoll = function(dt) {
     if(!this.simray) this.simray=new SimpleRay();
     this.simray.update(cam,this.dir);
     var simray = this.simray;
-    var hitpos=[], hitnorm=[], hitbound_minv=null, hitbound_maxv=null;
+    var hitpos=[], hitnorm=[];
     var last_hit_pos;
     
     traceVoxelRay( function(x,y,z) {
@@ -416,16 +421,9 @@ g_cursor_prop.prop3DPoll = function(dt) {
     // カーソル見えてる
     this.setVisible(true);
     this.cursor_hit_norm=hitnorm;
+    this.cursor_hit_pos=hitpos;
+    this.setBlockLoc(hx,hy,hz);
 
-    
-    g_cursor_prop.hitbound_minv=hitbound_minv;
-    g_cursor_prop.hitbound_maxv=hitbound_maxv;    
-    if(hitbound_minv&&hitbound_maxv) {
-        g_cursor_prop.setBoundsLoc(vec3.fromValues(hitbound_minv[0],hitbound_minv[1],hitbound_minv[2]),
-                                   vec3.fromValues(hitbound_maxv[0],hitbound_maxv[1],hitbound_maxv[2]));
-    } else {        
-        g_cursor_prop.setBlockLoc(hx,hy,hz);
-    }
 
     return true;
 }
