@@ -34,7 +34,7 @@ document.addEventListener("mousedown", function(e) {
                 var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
                 var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
                 var col=vec4.fromValues(1,1,1,1);//range(0.3,1.0),range(0.3,1.0),range(0.3,1.0),1.0);
-                putBlock(x,y,z,SHAPE_CUBE,irange(0,8)+1,col);
+                putBlock(x,y,z,SHAPE_CUBE,col);
             }
         } else if(g_cur_tool == TOOL_PENCIL) {
             if(g_cursor_prop.cursor_hit_block_pos) {
@@ -162,7 +162,22 @@ var g_model_deck = new TileDeck();
 g_model_deck.setTexture(g_model_tex);
 g_model_deck.setSize(16,16,16,16);
 
+////////////////////////
 
+// model texture UVs allocation
+var g_uv_alloc_table = new Int32Array(16*16); 
+for(var i in g_uv_alloc_table) g_uv_alloc_table[i]=-1;
+function allocateUVIndex() {
+    for(var i in g_uv_alloc_table) {
+        if(g_uv_alloc_table[i]<0) {
+            g_uv_alloc_table[i]=1;
+            console.log("allocateUVIndex: found:",i);
+            return i;
+        }
+    }
+    console.error("allocateUVIndex: full!");
+    return undefined;
+}
 
 ////////////////////////
 
@@ -232,12 +247,37 @@ function getVertSet8(blk) {
         out.h=vec3.fromValues(0+x,1+y,0+z);
 
         var uvary = new Float32Array(4);
-        g_atlas_deck.getUVFromIndex(uvary,blk.deck_index,0,0,0);
-        out.uv_lt=vec2.fromValues(uvary[0],uvary[1]);
-        out.uv_rt=vec2.fromValues(uvary[2],uvary[1]);
-        out.uv_lb=vec2.fromValues(uvary[0],uvary[3]);
-        out.uv_rb=vec2.fromValues(uvary[2],uvary[3]);
-
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xp,0,0,0);
+        out.uv_xp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        out.uv_xp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        out.uv_xp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        out.uv_xp_rb=vec2.fromValues(uvary[2],uvary[3]);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xn,0,0,0);
+        out.uv_xn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        out.uv_xn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        out.uv_xn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        out.uv_xn_rb=vec2.fromValues(uvary[2],uvary[3]);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yp,0,0,0);        
+        out.uv_yp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        out.uv_yp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        out.uv_yp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        out.uv_yp_rb=vec2.fromValues(uvary[2],uvary[3]);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yn,0,0,0);        
+        out.uv_yn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        out.uv_yn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        out.uv_yn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        out.uv_yn_rb=vec2.fromValues(uvary[2],uvary[3]);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zp,0,0,0);        
+        out.uv_zp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        out.uv_zp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        out.uv_zp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        out.uv_zp_rb=vec2.fromValues(uvary[2],uvary[3]);                        
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zn,0,0,0);        
+        out.uv_zn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        out.uv_zn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        out.uv_zn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        out.uv_zn_rb=vec2.fromValues(uvary[2],uvary[3]);
+        
         var col=blk.color;
         out.ypcol=vec4.clone(col);
         out.xncol=vec4.fromValues(col[0]*0.8,col[1]*0.8,col[2]*0.8,1);
@@ -283,16 +323,35 @@ class Chunk extends Prop3D {
         }
         return -1;
     }
-    setBlock(ix,iy,iz,shapeid,dkind,col4) {
+    setBlock(ix,iy,iz,shapeid,col4,dkind) {
+        if(dkind===undefined) console.log("CHKSETBLOCK:",ix,iy,iz,"sh:",shapeid,"col:",col4,"dkind:",dkind);
         ix=to_i(ix);
         iy=to_i(iy);
         iz=to_i(iz);        
-        var block={x:ix,y:iy,z:iz,shape:shapeid,deck_index:dkind,color:col4,chunk_id:this.chunk_id};                
+        var block={x:ix,y:iy,z:iz,shape:shapeid,color:col4,chunk_id:this.chunk_id};                
         var ind = this.findBlock(ix,iy,iz);
         if(ind>=0) {
             this.blocks[ind] = block;
         } else {
             this.blocks.push(block);
+        }
+        if(dkind===undefined) {
+            if(shapeid!=SHAPE_CUBE) console.error("not impl");
+            var xpb=this.findBlock(ix+1,iy,iz);
+            console.log("xpb:",xpb);
+            if(xpb<0) block.uvind_xp=allocateUVIndex();
+            var xnb=this.findBlock(ix-1,iy,iz);
+            if(xnb<0) block.uvind_xn=allocateUVIndex();
+            var ypb=this.findBlock(ix,iy+1,iz);
+            if(ypb<0) block.uvind_yp=allocateUVIndex();
+            var ynb=this.findBlock(ix,iy-1,iz);
+            if(ynb<0) block.uvind_yn=allocateUVIndex();
+            var zpb=this.findBlock(ix,iy,iz+1);
+            if(zpb<0) block.uvind_zp=allocateUVIndex();
+            var znb=this.findBlock(ix,iy,iz-1);
+            if(znb<0) block.uvind_zn=allocateUVIndex();
+        } else {
+            block.uvind_xp=block.uvind_xn=block.uvind_yp=block.uvind_yn=block.uvind_zp=block.uvind_zn=dkind;
         }
     }
     updateMesh() {
@@ -328,6 +387,7 @@ class Chunk extends Prop3D {
             var block=this.blocks[bi];
             // 0,0,0のブロック基準点は(0,0,0)にあるようにする
             var vv=getVertSet8(block);
+//            console.log("VV:",vv);
             
             geom.setPosition3v(0+vi,vv.a); geom.setPosition3v(1+vi,vv.b); geom.setPosition3v(2+vi,vv.c); geom.setPosition3v(3+vi,vv.d);//-y
             geom.setPosition3v(4+vi,vv.e); geom.setPosition3v(5+vi,vv.f); geom.setPosition3v(6+vi,vv.g); geom.setPosition3v(7+vi,vv.h);//+y
@@ -336,12 +396,12 @@ class Chunk extends Prop3D {
             geom.setPosition3v(16+vi,vv.b); geom.setPosition3v(17+vi,vv.c); geom.setPosition3v(18+vi,vv.g); geom.setPosition3v(19+vi,vv.f);//+x
             geom.setPosition3v(20+vi,vv.d); geom.setPosition3v(21+vi,vv.a); geom.setPosition3v(22+vi,vv.e); geom.setPosition3v(23+vi,vv.h);//-x
 
-            geom.setUV2v(0+vi,vv.uv_lb); geom.setUV2v(1+vi,vv.uv_rb); geom.setUV2v(2+vi,vv.uv_rt); geom.setUV2v(3+vi,vv.uv_lt); // abcd
-            geom.setUV2v(4+vi,vv.uv_lb); geom.setUV2v(5+vi,vv.uv_rb); geom.setUV2v(6+vi,vv.uv_rt); geom.setUV2v(7+vi,vv.uv_lt); // efgh
-            geom.setUV2v(8+vi,vv.uv_lb); geom.setUV2v(9+vi,vv.uv_rb); geom.setUV2v(10+vi,vv.uv_rt); geom.setUV2v(11+vi,vv.uv_lt); // abfe
-            geom.setUV2v(12+vi,vv.uv_lb); geom.setUV2v(13+vi,vv.uv_rb); geom.setUV2v(14+vi,vv.uv_rt); geom.setUV2v(15+vi,vv.uv_lt); // cdhg
-            geom.setUV2v(16+vi,vv.uv_lb); geom.setUV2v(17+vi,vv.uv_rb); geom.setUV2v(18+vi,vv.uv_rt); geom.setUV2v(19+vi,vv.uv_lt); // bcgf
-            geom.setUV2v(20+vi,vv.uv_lb); geom.setUV2v(21+vi,vv.uv_rb); geom.setUV2v(22+vi,vv.uv_rt); geom.setUV2v(23+vi,vv.uv_lt); // daeh
+            geom.setUV2v(0+vi,vv.uv_yn_lb); geom.setUV2v(1+vi,vv.uv_yn_rb); geom.setUV2v(2+vi,vv.uv_yn_rt); geom.setUV2v(3+vi,vv.uv_yn_lt); // abcd
+            geom.setUV2v(4+vi,vv.uv_yp_lb); geom.setUV2v(5+vi,vv.uv_yp_rb); geom.setUV2v(6+vi,vv.uv_yp_rt); geom.setUV2v(7+vi,vv.uv_yp_lt); // efgh
+            geom.setUV2v(8+vi,vv.uv_zp_lb); geom.setUV2v(9+vi,vv.uv_zp_rb); geom.setUV2v(10+vi,vv.uv_zp_rt); geom.setUV2v(11+vi,vv.uv_zp_lt); // abfe
+            geom.setUV2v(12+vi,vv.uv_zn_lb); geom.setUV2v(13+vi,vv.uv_zn_rb); geom.setUV2v(14+vi,vv.uv_zn_rt); geom.setUV2v(15+vi,vv.uv_zn_lt); // cdhg
+            geom.setUV2v(16+vi,vv.uv_xp_lb); geom.setUV2v(17+vi,vv.uv_xp_rb); geom.setUV2v(18+vi,vv.uv_xp_rt); geom.setUV2v(19+vi,vv.uv_xp_lt); // bcgf
+            geom.setUV2v(20+vi,vv.uv_xn_lb); geom.setUV2v(21+vi,vv.uv_xn_rb); geom.setUV2v(22+vi,vv.uv_xn_rt); geom.setUV2v(23+vi,vv.uv_xn_lt); // daeh
 
 
             // colors
@@ -404,7 +464,7 @@ function createGroundChunk(x0,z0,x1,z1) {
             var r=1;
             if((x+z)%2==0) r=0.8;
             var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
-            chk.setBlock(x,-1,z,SHAPE_CUBE,IDX_GROUND,col);
+            chk.setBlock(x,-1,z,SHAPE_CUBE,col,IDX_GROUND);
         }
     }
     chk.updateMesh();
@@ -439,19 +499,19 @@ function findChunkAt(x,y,z) {
     if(!blk_found) return null;
     return findChunkById(blk_found.chunk_id);        
 }
-function putBlock(x,y,z,shape,dkind,col) {
+function putBlock(x,y,z,shape,col,dkind) {
     var chk = findChunkAt(x,y,z);
     if(chk) {
-        chk.setBlock(x,y,z,shape,dkind,col);
+        chk.setBlock(x,y,z,shape,col,dkind);
         chk.updateMesh();
     } else {
-        createNewChunk(x,y,z,shape,dkind,col);        
+        createNewChunk(x,y,z,shape,col,dkind);        
     }
 }
 
-function createNewChunk(x,y,z,shape,dkind,col) {
+function createNewChunk(x,y,z,shape,col,dkind) {
     var chk=new Chunk(g_model_tex);
-    chk.setBlock(x,y,z,shape,dkind,col);
+    chk.setBlock(x,y,z,shape,col,dkind);
     chk.updateMesh();
     g_main_layer.insertProp(chk);
     g_chunks.push(chk);
