@@ -27,14 +27,14 @@ document.getElementById("screen").addEventListener("mousedown", function(e) {
 });
 document.addEventListener("mousedown", function(e) {
     if(g_cursor_prop.cursor_hit_pos) {
-        console.log("hpos:",g_cursor_prop.cursor_hit_pos, g_cursor_prop.cursor_hit_norm);        
+//        console.log("hpos:",g_cursor_prop.cursor_hit_pos, g_cursor_prop.cursor_hit_norm);        
         if(g_cur_tool == TOOL_BLOCK) {
             if(g_cursor_prop.cursor_hit_pos) {
                 var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
                 var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
                 var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
                 var col=vec4.fromValues(1,1,1,1);//range(0.3,1.0),range(0.3,1.0),range(0.3,1.0),1.0);
-                createNewChunk(x,y,z,SHAPE_CUBE,irange(0,8)+1,col);
+                putBlock(x,y,z,SHAPE_CUBE,irange(0,8)+1,col);
             }
         } else if(g_cur_tool == TOOL_PENCIL) {
             if(g_cursor_prop.cursor_hit_block_pos) {
@@ -254,6 +254,8 @@ var SHAPE_CUBE = 0;
 var IDX_GROUND=0;
 var IDX_CROSS=1;
 
+var g_chunk_id_gen=1;
+
 class Chunk extends Prop3D {
     // 巨大な地形を表現する必要がないので、3次元配列ボクセルじゃなくて、単純な配列にしておく
     // コリジョンも地面だけでいい気がしてきた.
@@ -267,6 +269,9 @@ class Chunk extends Prop3D {
         this.setScl(1,1,1);
         this.setLoc(0,0,0);
         this.setColor(vec4.fromValues(1,1,1,1));
+
+        this.chunk_id = g_chunk_id_gen;
+        g_chunk_id_gen++;
     }
     findBlock(ix,iy,iz) {
         ix=to_i(ix);
@@ -282,7 +287,7 @@ class Chunk extends Prop3D {
         ix=to_i(ix);
         iy=to_i(iy);
         iz=to_i(iz);        
-        var block={x:ix,y:iy,z:iz,shape:shapeid,deck_index:dkind,color:col4};                
+        var block={x:ix,y:iy,z:iz,shape:shapeid,deck_index:dkind,color:col4,chunk_id:this.chunk_id};                
         var ind = this.findBlock(ix,iy,iz);
         if(ind>=0) {
             this.blocks[ind] = block;
@@ -410,6 +415,39 @@ function createGroundChunk(x0,z0,x1,z1) {
 var g_ground_sz=20;
 var g_ground_chk=createGroundChunk(-g_ground_sz,-g_ground_sz,g_ground_sz,g_ground_sz);
 
+function getBlockAround6(x,y,z) {
+    return [ findBlock(x+1,y,z), findBlock(x-1,y,z),
+            findBlock(x,y+1,z), findBlock(x,y-1,z),
+            findBlock(x,y,z+1), findBlock(x,y,z-1) ];
+}
+function findChunkById(id) {
+    for(var i in g_chunks) {
+        if(g_chunks[i].chunk_id==id) return g_chunks[i];
+    }
+    return null;
+}
+function findChunkAt(x,y,z) {
+    // check around-6, add when found, otherwise create new chunk
+    var blks = getBlockAround6(x,y,z);
+    var blk_found;
+    for(var i=0;i<6;i++) {
+        if(blks[i] && blks[i].chunk_id != g_ground_chk.chunk_id ) {
+            blk_found=blks[i];
+            break;
+        }
+    }
+    if(!blk_found) return null;
+    return findChunkById(blk_found.chunk_id);        
+}
+function putBlock(x,y,z,shape,dkind,col) {
+    var chk = findChunkAt(x,y,z);
+    if(chk) {
+        chk.setBlock(x,y,z,shape,dkind,col);
+        chk.updateMesh();
+    } else {
+        createNewChunk(x,y,z,shape,dkind,col);        
+    }
+}
 
 function createNewChunk(x,y,z,shape,dkind,col) {
     var chk=new Chunk(g_model_tex);
@@ -417,6 +455,7 @@ function createNewChunk(x,y,z,shape,dkind,col) {
     chk.updateMesh();
     g_main_layer.insertProp(chk);
     g_chunks.push(chk);
+    console.log("Created new chunk:",chk.chunk_id);
     return chk;
 }
 
@@ -547,7 +586,7 @@ function animate() {
 
     if(now_time > last_print_at+1000) {
         last_print_at=now_time;
-        document.getElementById("status").innerHTML = "FPS:"+fps+ "props:" + g_main_layer.props.length + "draw3d:" + Moyai.draw_count_3d + " skip3d:" + Moyai.skip_count_3d + " loc:" + g_main_camera.loc;
+        document.getElementById("status").innerHTML = "FPS:"+fps+ " props:" + g_main_layer.props.length + " draw3d:" + Moyai.draw_count_3d + " skip3d:" + Moyai.skip_count_3d + " loc:" + g_main_camera.loc + " chk:" + g_chunks.length;
         fps=0;
     }
 
