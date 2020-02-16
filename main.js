@@ -29,11 +29,13 @@ document.addEventListener("mousedown", function(e) {
     if(g_cursor_prop.cursor_hit_pos) {
         console.log("hpos:",g_cursor_prop.cursor_hit_pos, g_cursor_prop.cursor_hit_norm);        
         if(g_cur_tool == TOOL_BLOCK) {
-            var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
-            var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
-            var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
-            var col=vec4.fromValues(1,1,1,1);//range(0.3,1.0),range(0.3,1.0),range(0.3,1.0),1.0);
-            createNewChunk(x,y,z,SHAPE_CUBE,irange(0,8)+1,col);
+            if(g_cursor_prop.cursor_hit_pos) {
+                var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
+                var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
+                var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
+                var col=vec4.fromValues(1,1,1,1);//range(0.3,1.0),range(0.3,1.0),range(0.3,1.0),1.0);
+                createNewChunk(x,y,z,SHAPE_CUBE,irange(0,8)+1,col);
+            }
         } else if(g_cur_tool == TOOL_PENCIL) {
             if(g_cursor_prop.cursor_hit_block_pos) {
                 var x=to_i(g_cursor_prop.cursor_hit_block_pos[0]);
@@ -147,13 +149,18 @@ Moyai.insertLayer(g_hud_layer);
 g_hud_layer.setViewport(g_viewport2d);
 g_hud_layer.setCamera( g_hud_camera );
 
-var g_base_tex = new Texture();
-g_base_tex.loadPNG( "./atlas.png", 256,256 );
+var g_atlas_tex = new Texture();
+g_atlas_tex.loadPNG( "./atlas.png", 256,256 );
 //g_base_tex.min_filter=Moyai.gl.NEAREST_MIPMAP_NEAREST;  almost no perfomance improvement
-var g_base_deck = new TileDeck();
-g_base_deck.setTexture(g_base_tex);
-g_base_deck.setSize(16,16,16,16);
-    
+var g_atlas_deck = new TileDeck();
+g_atlas_deck.setTexture(g_atlas_tex);
+g_atlas_deck.setSize(16,16,16,16);
+
+var g_model_tex = new Texture();
+g_model_tex.loadPNG("./modeltex.png",256,256);
+var g_model_deck = new TileDeck();
+g_model_deck.setTexture(g_model_tex);
+g_model_deck.setSize(16,16,16,16);
 
 
 
@@ -225,7 +232,7 @@ function getVertSet8(blk) {
         out.h=vec3.fromValues(0+x,1+y,0+z);
 
         var uvary = new Float32Array(4);
-        g_base_deck.getUVFromIndex(uvary,blk.deck_index,0,0,0);
+        g_atlas_deck.getUVFromIndex(uvary,blk.deck_index,0,0,0);
         out.uv_lt=vec2.fromValues(uvary[0],uvary[1]);
         out.uv_rt=vec2.fromValues(uvary[2],uvary[1]);
         out.uv_lb=vec2.fromValues(uvary[0],uvary[3]);
@@ -245,18 +252,18 @@ function getVertSet8(blk) {
 //////////////////
 var SHAPE_CUBE = 0;
 var IDX_GROUND=0;
-var IDX_CROSS=16;
+var IDX_CROSS=1;
 
 class Chunk extends Prop3D {
     // 巨大な地形を表現する必要がないので、3次元配列ボクセルじゃなくて、単純な配列にしておく
     // コリジョンも地面だけでいい気がしてきた.
-    constructor() {
+    constructor(tex) {
         super();
         this.blocks=[];
 
         this.enable_frustum_culling = false;
         this.setMaterial(g_colshader);
-        this.setTexture(g_base_tex);
+        this.setTexture(tex);
         this.setScl(1,1,1);
         this.setLoc(0,0,0);
         this.setColor(vec4.fromValues(1,1,1,1));
@@ -409,7 +416,7 @@ function putGround(x0,z0,x1,z1) {
     }
 }
 function createGroundChunk(x0,z0,x1,z1) {
-    var chk=new Chunk();
+    var chk=new Chunk(g_atlas_tex);
     for(var z=z0;z<=z1;z++) {
         for(var x=x0;x<=x1;x++) {
             var r=1;
@@ -428,7 +435,7 @@ var g_ground_chk=createGroundChunk(-g_ground_sz,-g_ground_sz,g_ground_sz,g_groun
 
 
 function createNewChunk(x,y,z,shape,dkind,col) {
-    var chk=new Chunk();
+    var chk=new Chunk(g_model_tex);
     chk.setBlock(x,y,z,shape,dkind,col);
     chk.updateMesh();
     g_main_layer.insertProp(chk);
@@ -515,7 +522,7 @@ g_cursor_prop.prop3DPoll = function(dt) {
 
 ///////////////////
 var g_cross_prop = new Prop2D();
-g_cross_prop.setDeck(g_base_deck);
+g_cross_prop.setDeck(g_atlas_deck);
 g_cross_prop.setIndex(IDX_CROSS);
 g_cross_prop.setScl(32);
 g_cross_prop.setLoc(0,0);
