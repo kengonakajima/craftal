@@ -391,30 +391,7 @@ function findBlock(x,y,z) {
 ///////////////
 
 var g_colshader = new DefaultColorShaderMaterial();
-function putCube(loc,ind,col) {
-    var geom = new FaceGeometry(6*4,6*2);
-    setUVByIndex(geom,ind);
-    var p = new Prop3D();
-    p.enable_frustum_culling = false;
-    p.setGeom(geom);
-    p.setMaterial(g_colshader);
-    p.setTexture(g_base_tex);
-    p.setScl(1,1,1);
-    p.setLoc(loc);
-    p.setColor(col);
-    g_main_layer.insertProp(p);
-}
-// upside Y is 0
-function putGround(x0,z0,x1,z1) {
-    for(var z=z0;z<=z1;z++) {
-        for(var x=x0;x<=x1;x++) {
-            var r=1;
-            if((x+z)%2==0) r=0.8;
-            var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
-            putCube(vec3.fromValues(x+0.5,-1+0.5,z+0.5),IDX_GROUND,col);
-        }
-    }
-}
+
 function createGroundChunk(x0,z0,x1,z1) {
     var chk=new Chunk(g_atlas_tex);
     for(var z=z0;z<=z1;z++) {
