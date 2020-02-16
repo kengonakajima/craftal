@@ -26,7 +26,6 @@ document.getElementById("screen").addEventListener("mousedown", function(e) {
     pointerLock();
 });
 document.addEventListener("mousedown", function(e) {
-    console.log(g_cursor_prop.cursor_hit_pos) ;
     if(g_cursor_prop.cursor_hit_pos) {
         var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
         var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
@@ -297,9 +296,9 @@ class Chunk extends Prop3D {
             var sidecol1=vec4.fromValues(bc[0]*0.85,bc[1]*0.85,bc[2]*0.85,1);
             var sidecol2=vec4.fromValues(bc[0]*0.8,bc[1]*0.8,bc[2]*0.8,1);
             var sidecol3=vec4.fromValues(bc[0]*0.75,bc[1]*0.75,bc[2]*0.75,1);                        
-            
+            var bottomcol=vec4.fromValues(bc[0]*0.7,bc[1]*0.7,bc[2]*0.7,1);                        
             // bottom
-            for(var i=0;i<4;i++) geom.setColor4v(i+vi, block.color);
+            for(var i=0;i<4;i++) geom.setColor4v(i+vi, bottomcol);
             // top
             for(var i=4;i<8;i++) geom.setColor4v(i+vi, block.color);
             // side
@@ -330,13 +329,26 @@ class Chunk extends Prop3D {
             vi+=24;
             fi+=12;
         }
-        console.log("updateMesh: geom:",geom);
+//        console.log("updateMesh: geom:",geom);
         this.setGeom(geom);    // TODO: dispose older one     
     }
 };
 
 
 ////////////////////
+
+var g_chunks=[];
+function findBlock(x,y,z) {
+    for(var i in g_chunks) {
+        var chk=g_chunks[i];
+        var ind = chk.findBlock(x,y,z);
+        if(ind>=0) return chk.blocks[ind];
+    }
+    return null;
+}
+
+
+///////////////
 
 var g_colshader = new DefaultColorShaderMaterial();
 function putCube(loc,ind,col) {
@@ -375,6 +387,7 @@ function createGroundChunk(x0,z0,x1,z1) {
     }
     chk.updateMesh();
     g_main_layer.insertProp(chk);
+    g_chunks.push(chk);
     return chk;
 }
 var g_ground_sz=20;
@@ -386,8 +399,10 @@ function createNewChunk(x,y,z,shape,dkind,col) {
     chk.setBlock(x,y,z,shape,dkind,col);
     chk.updateMesh();
     g_main_layer.insertProp(chk);
+    g_chunks.push(chk);
     return chk;
 }
+
 
 
 
@@ -434,7 +449,8 @@ g_cursor_prop.prop3DPoll = function(dt) {
     
     traceVoxelRay( function(x,y,z) {
         if(x<-g_ground_sz || z<-g_ground_sz || x>g_ground_sz || z>g_ground_sz)return false;
-        if(y==-1) return true; else return false;
+        if(findBlock(x,y,z))return true;
+        return false;
     }, cam, this.dir, 15, hitpos, hitnorm );
     var hx=Math.floor(hitpos[0]),hy=Math.floor(hitpos[1]),hz=Math.floor(hitpos[2]);
     if(hitnorm[0]!=0) {

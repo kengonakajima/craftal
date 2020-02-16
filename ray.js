@@ -81,7 +81,6 @@ function traceVoxelRay_impl( getVoxel,
 	
 	// main loop along raycast vector
 	while (t <= max_d) {
-		
 		// exit check
 		var b = getVoxel(ix, iy, iz)
 		if (b) {
@@ -89,6 +88,11 @@ function traceVoxelRay_impl( getVoxel,
 				hit_pos[0] = px + t * dx
 				hit_pos[1] = py + t * dy
 				hit_pos[2] = pz + t * dz
+
+                var ep = 0.0000001;
+                if(Math.floor(hit_pos[0]+ep)>Math.floor(hit_pos[0])) hit_pos[0]+=ep;
+                if(Math.floor(hit_pos[1]+ep)>Math.floor(hit_pos[1])) hit_pos[1]+=ep;
+                if(Math.floor(hit_pos[2]+ep)>Math.floor(hit_pos[2])) hit_pos[2]+=ep;                
 			}
 			if (hit_norm) {
 				hit_norm[0] = hit_norm[1] = hit_norm[2] = 0
