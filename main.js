@@ -40,7 +40,8 @@ document.addEventListener("mousedown", function(e) {
                 var y=to_i(g_cursor_prop.cursor_hit_block_pos[1]);
                 var z=to_i(g_cursor_prop.cursor_hit_block_pos[2]);
                 var blk = findBlock(x,y,z);
-                console.log("BLK:",blk,x,y,z);
+                var vv=getVertSet8(blk);
+                console.log("BLK:",blk,vv);
             }
         }
     }
@@ -210,9 +211,10 @@ function setLineBoxGeom(geom,xsz,ysz,zsz,col) {
 //  |/              |/                         3   2
 //  A ------------- B     >   +x              0   1
 //  -d,-d,d
-function getVertSet8(shapeid,dkind,col,x,y,z) {
+function getVertSet8(blk) {
+    var x=blk.x, y=blk.y, z=blk.z;
     var out={};
-    if(shapeid==SHAPE_CUBE) {
+    if(blk.shape==SHAPE_CUBE) {
         out.a=vec3.fromValues(0+x,0+y,1+z);
         out.b=vec3.fromValues(1+x,0+y,1+z);
         out.c=vec3.fromValues(1+x,0+y,0+z);
@@ -223,12 +225,13 @@ function getVertSet8(shapeid,dkind,col,x,y,z) {
         out.h=vec3.fromValues(0+x,1+y,0+z);
 
         var uvary = new Float32Array(4);
-        g_base_deck.getUVFromIndex(uvary,dkind,0,0,0);
+        g_base_deck.getUVFromIndex(uvary,blk.deck_index,0,0,0);
         out.uv_lt=vec2.fromValues(uvary[0],uvary[1]);
         out.uv_rt=vec2.fromValues(uvary[2],uvary[1]);
         out.uv_lb=vec2.fromValues(uvary[0],uvary[3]);
         out.uv_rb=vec2.fromValues(uvary[2],uvary[3]);
 
+        var col=blk.color;
         out.ypcol=vec4.clone(col);
         out.xncol=vec4.fromValues(col[0]*0.8,col[1]*0.8,col[2]*0.8,1);
         out.zncol=vec4.fromValues(col[0]*0.7,col[1]*0.7,col[2]*0.7,1);
@@ -312,11 +315,7 @@ class Chunk extends Prop3D {
         for(var bi=0;bi<num_block;bi++) {
             var block=this.blocks[bi];
             // 0,0,0のブロック基準点は(0,0,0)にあるようにする
-
-//            geom.need_positions_update=true;
-
-
-            var vv=getVertSet8(block.shape,block.deck_index,block.color,block.x,block.y,block.z);
+            var vv=getVertSet8(block);
             
             geom.setPosition3v(0+vi,vv.a); geom.setPosition3v(1+vi,vv.b); geom.setPosition3v(2+vi,vv.c); geom.setPosition3v(3+vi,vv.d);//-y
             geom.setPosition3v(4+vi,vv.e); geom.setPosition3v(5+vi,vv.f); geom.setPosition3v(6+vi,vv.g); geom.setPosition3v(7+vi,vv.h);//+y
