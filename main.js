@@ -27,11 +27,22 @@ document.getElementById("screen").addEventListener("mousedown", function(e) {
 });
 document.addEventListener("mousedown", function(e) {
     if(g_cursor_prop.cursor_hit_pos) {
-        var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
-        var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
-        var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
-        var col=vec4.fromValues(range(0,0.5),range(0,0.5),range(0,0.5),1);
-        createNewChunk(x,y,z,SHAPE_CUBE,4,col);
+        console.log("hpos:",g_cursor_prop.cursor_hit_pos, g_cursor_prop.cursor_hit_norm);        
+        if(g_cur_tool == TOOL_BLOCK) {
+            var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
+            var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
+            var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
+            var col=vec4.fromValues(1,1,1,1);//range(0.3,1.0),range(0.3,1.0),range(0.3,1.0),1.0);
+            createNewChunk(x,y,z,SHAPE_CUBE,irange(0,8)+1,col);
+        } else if(g_cur_tool == TOOL_PENCIL) {
+            if(g_cursor_prop.cursor_hit_block_pos) {
+                var x=to_i(g_cursor_prop.cursor_hit_block_pos[0]);
+                var y=to_i(g_cursor_prop.cursor_hit_block_pos[1]);
+                var z=to_i(g_cursor_prop.cursor_hit_block_pos[2]);
+                var blk = findBlock(x,y,z);
+                console.log("BLK:",blk,x,y,z);
+            }
+        }
     }
 });
 
@@ -140,7 +151,7 @@ g_base_tex.loadPNG( "./atlas.png", 256,256 );
 //g_base_tex.min_filter=Moyai.gl.NEAREST_MIPMAP_NEAREST;  almost no perfomance improvement
 var g_base_deck = new TileDeck();
 g_base_deck.setTexture(g_base_tex);
-g_base_deck.setSize(32,32,8,8);
+g_base_deck.setSize(16,16,16,16);
     
 
 
@@ -185,8 +196,53 @@ function setLineBoxGeom(geom,xsz,ysz,zsz,col) {
     }
 }
 
+//   +y
+//    ^
+//                     d,d,-d
+//     H ------------- G
+//    /|              /|
+//   / |             / |
+//  E ------------- F  |
+//  |  |            |  |      -z               7   6
+//  |  |            |  |      /               4   5
+//  |  D -----------|- C
+//  | /             | /
+//  |/              |/                         3   2
+//  A ------------- B     >   +x              0   1
+//  -d,-d,d
+function getVertSet8(shapeid,dkind,col,x,y,z) {
+    var out={};
+    if(shapeid==SHAPE_CUBE) {
+        out.a=vec3.fromValues(0+x,0+y,1+z);
+        out.b=vec3.fromValues(1+x,0+y,1+z);
+        out.c=vec3.fromValues(1+x,0+y,0+z);
+        out.d=vec3.fromValues(0+x,0+y,0+z);
+        out.e=vec3.fromValues(0+x,1+y,1+z);
+        out.f=vec3.fromValues(1+x,1+y,1+z);
+        out.g=vec3.fromValues(1+x,1+y,0+z);
+        out.h=vec3.fromValues(0+x,1+y,0+z);
+
+        var uvary = new Float32Array(4);
+        g_base_deck.getUVFromIndex(uvary,dkind,0,0,0);
+        out.uv_lt=vec2.fromValues(uvary[0],uvary[1]);
+        out.uv_rt=vec2.fromValues(uvary[2],uvary[1]);
+        out.uv_lb=vec2.fromValues(uvary[0],uvary[3]);
+        out.uv_rb=vec2.fromValues(uvary[2],uvary[3]);
+
+        out.ypcol=vec4.clone(col);
+        out.xncol=vec4.fromValues(col[0]*0.8,col[1]*0.8,col[2]*0.8,1);
+        out.zncol=vec4.fromValues(col[0]*0.7,col[1]*0.7,col[2]*0.7,1);
+        out.xpcol=vec4.fromValues(col[0]*0.6,col[1]*0.6,col[2]*0.6,1);
+        out.zpcol=vec4.fromValues(col[0]*0.5,col[1]*0.5,col[2]*0.5,1);                        
+        out.yncol=vec4.fromValues(col[0]*0.4,col[1]*0.4,col[2]*0.4,1);                        
+        
+    }
+    return out;
+}
 //////////////////
 var SHAPE_CUBE = 0;
+var IDX_GROUND=0;
+var IDX_CROSS=16;
 
 class Chunk extends Prop3D {
     // 巨大な地形を表現する必要がないので、3次元配列ボクセルじゃなくて、単純な配列にしておく
@@ -259,53 +315,31 @@ class Chunk extends Prop3D {
 
 //            geom.need_positions_update=true;
 
-            var uvary = new Float32Array(4);
-            g_base_deck.getUVFromIndex(uvary,block.deck_index,0,0,0);
-            var uv_lt=vec2.fromValues(uvary[0],uvary[1]);
-            var uv_rt=vec2.fromValues(uvary[2],uvary[1]);
-            var uv_lb=vec2.fromValues(uvary[0],uvary[3]);
-            var uv_rb=vec2.fromValues(uvary[2],uvary[3]);
-            var x=block.x, y=block.y, z=block.z;
-            var a=vec3.fromValues(0+x,0+y,1+z);
-            var b=vec3.fromValues(1+x,0+y,1+z);
-            var c=vec3.fromValues(1+x,0+y,0+z);
-            var d=vec3.fromValues(0+x,0+y,0+z);
-            var e=vec3.fromValues(0+x,1+y,1+z);
-            var f=vec3.fromValues(1+x,1+y,1+z);
-            var g=vec3.fromValues(1+x,1+y,0+z);
-            var h=vec3.fromValues(0+x,1+y,0+z);
 
+            var vv=getVertSet8(block.shape,block.deck_index,block.color,block.x,block.y,block.z);
             
-            geom.setPosition3v(0+vi,a); geom.setPosition3v(1+vi,b); geom.setPosition3v(2+vi,c); geom.setPosition3v(3+vi,d);//-y
-            geom.setPosition3v(4+vi,e); geom.setPosition3v(5+vi,f); geom.setPosition3v(6+vi,g); geom.setPosition3v(7+vi,h);//+y
-            geom.setPosition3v(8+vi,a); geom.setPosition3v(9+vi,b); geom.setPosition3v(10+vi,f); geom.setPosition3v(11+vi,e);//+z
-            geom.setPosition3v(12+vi,c); geom.setPosition3v(13+vi,d); geom.setPosition3v(14+vi,h); geom.setPosition3v(15+vi,g);//-z
-            geom.setPosition3v(16+vi,b); geom.setPosition3v(17+vi,c); geom.setPosition3v(18+vi,g); geom.setPosition3v(19+vi,f);//+x
-            geom.setPosition3v(20+vi,d); geom.setPosition3v(21+vi,a); geom.setPosition3v(22+vi,e); geom.setPosition3v(23+vi,h);//-x
+            geom.setPosition3v(0+vi,vv.a); geom.setPosition3v(1+vi,vv.b); geom.setPosition3v(2+vi,vv.c); geom.setPosition3v(3+vi,vv.d);//-y
+            geom.setPosition3v(4+vi,vv.e); geom.setPosition3v(5+vi,vv.f); geom.setPosition3v(6+vi,vv.g); geom.setPosition3v(7+vi,vv.h);//+y
+            geom.setPosition3v(8+vi,vv.a); geom.setPosition3v(9+vi,vv.b); geom.setPosition3v(10+vi,vv.f); geom.setPosition3v(11+vi,vv.e);//+z
+            geom.setPosition3v(12+vi,vv.c); geom.setPosition3v(13+vi,vv.d); geom.setPosition3v(14+vi,vv.h); geom.setPosition3v(15+vi,vv.g);//-z
+            geom.setPosition3v(16+vi,vv.b); geom.setPosition3v(17+vi,vv.c); geom.setPosition3v(18+vi,vv.g); geom.setPosition3v(19+vi,vv.f);//+x
+            geom.setPosition3v(20+vi,vv.d); geom.setPosition3v(21+vi,vv.a); geom.setPosition3v(22+vi,vv.e); geom.setPosition3v(23+vi,vv.h);//-x
 
-            geom.setUV2v(0+vi,uv_lb); geom.setUV2v(1+vi,uv_rb); geom.setUV2v(2+vi,uv_rt); geom.setUV2v(3+vi,uv_lt); // abcd
-            geom.setUV2v(4+vi,uv_lb); geom.setUV2v(5+vi,uv_rb); geom.setUV2v(6+vi,uv_rt); geom.setUV2v(7+vi,uv_lt); // efgh
-            geom.setUV2v(8+vi,uv_lb); geom.setUV2v(9+vi,uv_rb); geom.setUV2v(10+vi,uv_rt); geom.setUV2v(11+vi,uv_lt); // abfe
-            geom.setUV2v(12+vi,uv_lb); geom.setUV2v(13+vi,uv_rb); geom.setUV2v(14+vi,uv_rt); geom.setUV2v(15+vi,uv_lt); // cdhg
-            geom.setUV2v(16+vi,uv_lb); geom.setUV2v(17+vi,uv_rb); geom.setUV2v(18+vi,uv_rt); geom.setUV2v(19+vi,uv_lt); // bcgf
-            geom.setUV2v(20+vi,uv_lb); geom.setUV2v(21+vi,uv_rb); geom.setUV2v(22+vi,uv_rt); geom.setUV2v(23+vi,uv_lt); // daeh
+            geom.setUV2v(0+vi,vv.uv_lb); geom.setUV2v(1+vi,vv.uv_rb); geom.setUV2v(2+vi,vv.uv_rt); geom.setUV2v(3+vi,vv.uv_lt); // abcd
+            geom.setUV2v(4+vi,vv.uv_lb); geom.setUV2v(5+vi,vv.uv_rb); geom.setUV2v(6+vi,vv.uv_rt); geom.setUV2v(7+vi,vv.uv_lt); // efgh
+            geom.setUV2v(8+vi,vv.uv_lb); geom.setUV2v(9+vi,vv.uv_rb); geom.setUV2v(10+vi,vv.uv_rt); geom.setUV2v(11+vi,vv.uv_lt); // abfe
+            geom.setUV2v(12+vi,vv.uv_lb); geom.setUV2v(13+vi,vv.uv_rb); geom.setUV2v(14+vi,vv.uv_rt); geom.setUV2v(15+vi,vv.uv_lt); // cdhg
+            geom.setUV2v(16+vi,vv.uv_lb); geom.setUV2v(17+vi,vv.uv_rb); geom.setUV2v(18+vi,vv.uv_rt); geom.setUV2v(19+vi,vv.uv_lt); // bcgf
+            geom.setUV2v(20+vi,vv.uv_lb); geom.setUV2v(21+vi,vv.uv_rb); geom.setUV2v(22+vi,vv.uv_rt); geom.setUV2v(23+vi,vv.uv_lt); // daeh
 
 
-            var bc=block.color;
-            var sidecol0=vec4.fromValues(bc[0]*0.9,bc[1]*0.9,bc[2]*0.9,1);
-            var sidecol1=vec4.fromValues(bc[0]*0.85,bc[1]*0.85,bc[2]*0.85,1);
-            var sidecol2=vec4.fromValues(bc[0]*0.8,bc[1]*0.8,bc[2]*0.8,1);
-            var sidecol3=vec4.fromValues(bc[0]*0.75,bc[1]*0.75,bc[2]*0.75,1);                        
-            var bottomcol=vec4.fromValues(bc[0]*0.7,bc[1]*0.7,bc[2]*0.7,1);                        
-            // bottom
-            for(var i=0;i<4;i++) geom.setColor4v(i+vi, bottomcol);
-            // top
-            for(var i=4;i<8;i++) geom.setColor4v(i+vi, block.color);
-            // side
-            for(var i=8;i<12;i++) geom.setColor4v(i+vi, sidecol0);
-            for(var i=12;i<16;i++) geom.setColor4v(i+vi, sidecol1);
-            for(var i=16;i<20;i++) geom.setColor4v(i+vi, sidecol2);
-            for(var i=20;i<24;i++) geom.setColor4v(i+vi, sidecol3);            
+            // colors
+            for(var i=0;i<4;i++) geom.setColor4v(i+vi, vv.yncol);  
+            for(var i=4;i<8;i++) geom.setColor4v(i+vi, vv.ypcol);
+            for(var i=8;i<12;i++) geom.setColor4v(i+vi, vv.zpcol);
+            for(var i=12;i<16;i++) geom.setColor4v(i+vi, vv.zncol);
+            for(var i=16;i<20;i++) geom.setColor4v(i+vi, vv.xpcol);
+            for(var i=20;i<24;i++) geom.setColor4v(i+vi, vv.xncol);
 
             
             // bottom
@@ -371,7 +405,7 @@ function putGround(x0,z0,x1,z1) {
             var r=1;
             if((x+z)%2==0) r=0.8;
             var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
-            putCube(vec3.fromValues(x+0.5,-1+0.5,z+0.5),4,col);
+            putCube(vec3.fromValues(x+0.5,-1+0.5,z+0.5),IDX_GROUND,col);
         }
     }
 }
@@ -382,7 +416,7 @@ function createGroundChunk(x0,z0,x1,z1) {
             var r=1;
             if((x+z)%2==0) r=0.8;
             var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
-            chk.setBlock(x,-1,z,SHAPE_CUBE,4,col);
+            chk.setBlock(x,-1,z,SHAPE_CUBE,IDX_GROUND,col);
         }
     }
     chk.updateMesh();
@@ -444,12 +478,15 @@ g_cursor_prop.prop3DPoll = function(dt) {
     if(!this.simray) this.simray=new SimpleRay();
     this.simray.update(cam,this.dir);
     var simray = this.simray;
-    var hitpos=[], hitnorm=[];
+    var hitpos=[], hitnorm=[], blockpos=[];
     var last_hit_pos;
     
     traceVoxelRay( function(x,y,z) {
         if(x<-g_ground_sz || z<-g_ground_sz || x>g_ground_sz || z>g_ground_sz)return false;
-        if(findBlock(x,y,z))return true;
+        if(findBlock(x,y,z)) {
+            blockpos[0]=x; blockpos[1]=y; blockpos[2]=z;
+            return true;
+        }
         return false;
     }, cam, this.dir, 15, hitpos, hitnorm );
     var hx=Math.floor(hitpos[0]),hy=Math.floor(hitpos[1]),hz=Math.floor(hitpos[2]);
@@ -470,6 +507,7 @@ g_cursor_prop.prop3DPoll = function(dt) {
     this.setVisible(true);
     this.cursor_hit_norm=hitnorm;
     this.cursor_hit_pos=hitpos;
+    this.cursor_hit_block_pos=blockpos;
     this.setBlockLoc(hx,hy,hz);
 
 
@@ -479,12 +517,25 @@ g_cursor_prop.prop3DPoll = function(dt) {
 ///////////////////
 var g_cross_prop = new Prop2D();
 g_cross_prop.setDeck(g_base_deck);
-g_cross_prop.setIndex(5);
+g_cross_prop.setIndex(IDX_CROSS);
 g_cross_prop.setScl(32);
 g_cross_prop.setLoc(0,0);
 g_cross_prop.setColor(Color.fromValues(1,1,1,0.4));
 g_hud_layer.insertProp(g_cross_prop);
 
+
+///////////////////////////////
+TOOL_BLOCK=1;
+TOOL_PENCIL=2;
+var g_cur_tool;
+function setTool(t) {
+    g_cur_tool= t;
+    var nm="unknown";
+    if(t==TOOL_BLOCK) nm = "Block";
+    else if(t==TOOL_PENCIL) nm="Pencil";
+    document.getElementById("tool").innerHTML="Tool: " + nm;
+}
+setTool(TOOL_BLOCK);
 
 ///////////////////////////////
 function tangentMax(theta,absmax) {
@@ -540,6 +591,8 @@ function animate() {
 
         var front=0,side=0;
         if(g_keyboard) {
+            if(g_keyboard.getKey('1')) setTool(TOOL_BLOCK);
+            if(g_keyboard.getKey('2')) setTool(TOOL_PENCIL);
             if(g_keyboard.getKey('a')) side-=1;
             if(g_keyboard.getKey('d')) side+=1;
             if(g_keyboard.getKey('w')) front+=1;
