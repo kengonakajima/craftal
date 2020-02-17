@@ -1,5 +1,14 @@
 to_i=Math.floor;
-//
+
+////////////
+
+var SHAPE_CUBE = 0;
+var SHAPE_SLOPE = 1;
+var IDX_GROUND=0;
+var IDX_CROSS=1;
+
+
+//////////
 
 var g_stop_render=false;
 function stopRender() {
@@ -285,6 +294,25 @@ function setLineBoxGeom(geom,xsz,ysz,zsz,col) {
 //  |/              |/                         3   2
 //  A ------------- B     >   +x              0   1
 //  -d,-d,d
+//
+//
+// Slope
+//
+//
+//                     d,d,-d
+//                     G
+//                   //|
+//                /  / |
+//             /    F  |
+//          /     / |  |      -z               7   6
+//       /      /   |  |      /               4   5
+//     D ----/------|- C
+//    /   /         | /
+//   / /            |/                         3   2
+//  A ------------- B     >   +x              0   1
+//  -d,-d,d
+//
+//
 function getVertSet8(blk) {
     var x=blk.x, y=blk.y, z=blk.z;
     var out={};
@@ -393,9 +421,6 @@ function getVertSet8(blk) {
     return out;
 }
 //////////////////
-var SHAPE_CUBE = 0;
-var IDX_GROUND=0;
-var IDX_CROSS=1;
 
 var g_chunk_id_gen=1;
 
