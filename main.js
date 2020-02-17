@@ -397,25 +397,25 @@ function getVertSet8(blk) {
             out.xncol,out.xncol,out.xncol,out.xncol,
         ];
 
-        out.face_yn_0 = [0,3,1]; // ADB
-        out.face_yn_1 = [3,2,1]; // DCB
-        out.face_yp_0 = [7,5,6]; // HFG
-        out.face_yp_1 = [4,5,7]; // EFH
-        out.face_zp_0 = [8,9,10]; // ABF
-        out.face_zp_1 = [8,10,11]; // AFE
-        out.face_zn_0 = [12,13,14]; // CDH
-        out.face_zn_1 = [12,14,15]; // CHG
-        out.face_xp_0 = [16,17,18]; // BCG
-        out.face_xp_1 = [16,18,19]; // BGF
-        out.face_xn_0 = [20,21,22]; // DAE
-        out.face_xn_1 = [20,22,23]; // DEH
+        var face_yn_0 = [0,3,1]; // ADB
+        var face_yn_1 = [3,2,1]; // DCB
+        var face_yp_0 = [7,5,6]; // HFG
+        var face_yp_1 = [4,5,7]; // EFH
+        var face_zp_0 = [8,9,10]; // ABF
+        var face_zp_1 = [8,10,11]; // AFE
+        var face_zn_0 = [12,13,14]; // CDH
+        var face_zn_1 = [12,14,15]; // CHG
+        var face_xp_0 = [16,17,18]; // BCG
+        var face_xp_1 = [16,18,19]; // BGF
+        var face_xn_0 = [20,21,22]; // DAE
+        var face_xn_1 = [20,22,23]; // DEH
         out.faces = [
-            out.face_yn_0, out.face_yn_1,
-            out.face_yp_0, out.face_yp_1,
-            out.face_zp_0, out.face_zp_1,
-            out.face_zn_0, out.face_zn_1,
-            out.face_xp_0, out.face_xp_1,
-            out.face_xn_0, out.face_xn_1,
+            face_yn_0, face_yn_1,
+            face_yp_0, face_yp_1,
+            face_zp_0, face_zp_1,
+            face_zn_0, face_zn_1,
+            face_xp_0, face_xp_1,
+            face_xn_0, face_xn_1,
         ];
     }
     return out;
