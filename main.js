@@ -185,6 +185,16 @@ function allocateUVIndex() {
     console.error("allocateUVIndex: full!");
     return undefined;
 }
+function freeUVIndex(ind) {
+    if(ind===undefined || ind==null) return;
+    ind|=0;
+    if(ind<0||ind>=g_uv_alloc_table.length) {
+        console.error("freeUVIndex: invalid ind:",ind);
+        return;
+    }
+    g_uv_alloc_table[ind]=-1;
+    console.log("freeUVIndex: freed:",ind);
+}
 
 ////////////////////////
 
@@ -331,7 +341,7 @@ class Chunk extends Prop3D {
         return -1;
     }
     setBlock(ix,iy,iz,shapeid,col4,dkind) {
-        if(dkind===undefined) console.log("CHKSETBLOCK:",ix,iy,iz,"sh:",shapeid,"col:",col4,"dkind:",dkind);
+//        if(dkind===undefined) console.log("CHKSETBLOCK:",ix,iy,iz,"sh:",shapeid,"col:",col4,"dkind:",dkind);
         ix=to_i(ix);
         iy=to_i(iy);
         iz=to_i(iz);        
@@ -345,7 +355,6 @@ class Chunk extends Prop3D {
         if(dkind===undefined) {
             if(shapeid!=SHAPE_CUBE) console.error("not impl");
             var xpb=this.findBlock(ix+1,iy,iz);
-            console.log("xpb:",xpb);
             if(xpb<0) block.uvind_xp=allocateUVIndex();
             var xnb=this.findBlock(ix-1,iy,iz);
             if(xnb<0) block.uvind_xn=allocateUVIndex();
@@ -366,6 +375,12 @@ class Chunk extends Prop3D {
             var b=this.blocks[i];
             if(b.x==ix && b.y==iy && b.z==iz) {
                 this.blocks.splice(i,1);
+                freeUVIndex(b.uvind_xp);
+                freeUVIndex(b.uvind_xn);
+                freeUVIndex(b.uvind_yp);
+                freeUVIndex(b.uvind_yn);
+                freeUVIndex(b.uvind_zp);
+                freeUVIndex(b.uvind_zn);                
                 this.updateMesh();                
                 return;
             }
