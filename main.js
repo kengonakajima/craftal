@@ -53,33 +53,30 @@ document.addEventListener("mousedown", function(e) {
                 
                 var vv=getVertSet8(blk);
                 console.log("BLK:",blk,vv,g_cursor_prop.cursor_hit_norm);
-                if(blk.shape==SHAPE_CUBE) {
-                    if(g_cursor_prop.cursor_hit_norm[1]==1) {
-                        var t={};
-                        // HFG
-                        t.a=vv.positions[vv.face_yp_0[0]];
-                        t.b=vv.positions[vv.face_yp_0[1]];
-                        t.c=vv.positions[vv.face_yp_0[2]];
-                        
-                        var p=getPointOnFace(g_cursor_prop.simray,t);
-                        var uv_a=vv.uvs[vv.face_yp_0[0]];
-                        var uv_b=vv.uvs[vv.face_yp_0[1]];
-                        var uv_c=vv.uvs[vv.face_yp_0[2]];
-                        var uv_ab=vec2.fromValues(uv_b[0]-uv_a[0],uv_b[1]-uv_a[1]);
-                        var uv_ac=vec2.fromValues(uv_c[0]-uv_a[0],uv_c[1]-uv_a[1]);
-                        var uv_pos=vec2.fromValues(uv_a[0]+uv_ab[0]*p.s+uv_ac[0]*p.t,
-                                                   uv_a[1]+uv_ab[1]*p.s+uv_ac[1]*p.t);
-                        var pix_x = to_i(uv_pos[0]*256);
-                        var pix_y = to_i(uv_pos[1]*256);
-                        g_model_img.setPixel(pix_x,pix_y,Color.fromValues(1,1,1,1));
-                        g_model_tex.setMoyaiImage(g_model_img);
-                        console.log("hoge",uv_ab,uv_ac,uv_a,uv_pos,pix_x,pix_y);
-//                        var uv_pos=vec2.fromValues(uv_a[0]*s+uv_)
 
-                        
-                    }                    
-                }
-
+                // 全部の面について調べるか。
+                for(var i=0;i<vv.num_face;i++) {
+                    var face = vv.faces[i];
+                    var t={};
+                    t.a=vv.positions[vv.faces[i][0]];
+                    t.b=vv.positions[vv.faces[i][1]];
+                    t.c=vv.positions[vv.faces[i][2]];
+                    var p=getPointOnFace(g_cursor_prop.simray,t);
+                    if(!p) continue;
+                    
+                    var uv_a=vv.uvs[vv.faces[i][0]];
+                    var uv_b=vv.uvs[vv.faces[i][1]];
+                    var uv_c=vv.uvs[vv.faces[i][2]];
+                    var uv_ab=vec2.fromValues(uv_b[0]-uv_a[0],uv_b[1]-uv_a[1]);
+                    var uv_ac=vec2.fromValues(uv_c[0]-uv_a[0],uv_c[1]-uv_a[1]);
+                    var uv_pos=vec2.fromValues(uv_a[0]+uv_ab[0]*p.s+uv_ac[0]*p.t,
+                                               uv_a[1]+uv_ab[1]*p.s+uv_ac[1]*p.t);
+                    var pix_x = to_i(uv_pos[0]*256);
+                    var pix_y = to_i(uv_pos[1]*256);
+                    g_model_img.setPixel(pix_x,pix_y,Color.fromValues(1,1,1,1));
+                    g_model_tex.setMoyaiImage(g_model_img);
+                    console.log("hoge",uv_ab,uv_ac,uv_a,uv_pos,pix_x,pix_y);
+                }                    
             }
         }
     }
