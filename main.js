@@ -71,6 +71,8 @@ document.addEventListener("mousedown", function(e) {
                                                    uv_a[1]+uv_ab[1]*p.s+uv_ac[1]*p.t);
                         var pix_x = to_i(uv_pos[0]*256);
                         var pix_y = to_i(uv_pos[1]*256);
+                        g_model_img.setPixel(pix_x,pix_y,Color.fromValues(1,1,1,1));
+                        g_model_tex.setMoyaiImage(g_model_img);
                         console.log("hoge",uv_ab,uv_ac,uv_a,uv_pos,pix_x,pix_y);
 //                        var uv_pos=vec2.fromValues(uv_a[0]*s+uv_)
 
@@ -190,8 +192,18 @@ var g_atlas_deck = new TileDeck();
 g_atlas_deck.setTexture(g_atlas_tex);
 g_atlas_deck.setSize(16,16,16,16);
 
+var g_model_img = new MoyaiImage();
+//g_model_img.setSize(256,256);
+g_model_img.loadPNG("./modeltex.png",256,256);
+
+
 var g_model_tex = new Texture();
-g_model_tex.loadPNG("./modeltex.png",256,256);
+g_model_img.onload = function() {
+    g_model_tex.setMoyaiImage(g_model_img);
+}
+//g_model_tex.loadPNG("./modeltex.png",256,256);
+
+
 var g_model_deck = new TileDeck();
 g_model_deck.setTexture(g_model_tex);
 g_model_deck.setSize(16,16,16,16);
