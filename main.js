@@ -29,7 +29,7 @@ document.addEventListener("mousedown", function(e) {
     if(g_cursor_prop.cursor_hit_pos) {
 //        console.log("hpos:",g_cursor_prop.cursor_hit_pos, g_cursor_prop.cursor_hit_norm);        
         if(g_cur_tool == TOOL_BLOCK) {
-            if(g_cursor_prop.cursor_hit_pos) {
+            if(g_cursor_prop.cursor_hit_pos && g_cursor_prop.cursor_hit_norm ) {
                 var x=to_i(g_cursor_prop.cursor_hit_pos[0]+g_cursor_prop.cursor_hit_norm[0]*0.5);
                 var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
                 var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
@@ -44,7 +44,7 @@ document.addEventListener("mousedown", function(e) {
                 removeBlock(x,y,z);
             }
         } else if(g_cur_tool == TOOL_PENCIL) {
-            if(g_cursor_prop.cursor_hit_block_pos) {
+            if(g_cursor_prop.cursor_hit_block_pos && g_cursor_prop.cursor_hit_norm ) {
                 var x=to_i(g_cursor_prop.cursor_hit_block_pos[0]);
                 var y=to_i(g_cursor_prop.cursor_hit_block_pos[1]);
                 var z=to_i(g_cursor_prop.cursor_hit_block_pos[2]);
@@ -55,8 +55,12 @@ document.addEventListener("mousedown", function(e) {
                 console.log("BLK:",blk,vv,g_cursor_prop.cursor_hit_norm);
                 if(blk.shape==SHAPE_CUBE) {
                     if(g_cursor_prop.cursor_hit_norm[1]==1) {
-                        console.log("top"); // HFG, EFH
-
+                        var t={};
+                        t.a=vv.positions[vv.face_yp_0[0]];
+                        t.b=vv.positions[vv.face_yp_0[1]];
+                        t.c=vv.positions[vv.face_yp_0[2]];
+                        console.log("top",t,g_cursor_prop.simray);
+                        paintOnFace(g_cursor_prop.simray,t);
                     }                    
                 }
 
@@ -479,7 +483,6 @@ class Chunk extends Prop3D {
             var block=this.blocks[bi];
             // 0,0,0のブロック基準点は(0,0,0)にあるようにする
             var vv=getVertSet8(block);
-            console.log("VV:",vv);
             for(var i=0;i<vv.num_vert;i++) geom.setPosition3v(i+vi,vv.positions[i]);
             for(var i=0;i<vv.num_vert;i++) geom.setUV2v(i+vi,vv.uvs[i]);
             for(var i=0;i<vv.num_vert;i++) geom.setColor4v(i+vi,vv.colors[i]);
@@ -588,6 +591,69 @@ function removeBlock(x,y,z) {
 }
 
 
+// https://vorg.github.io/pex/docs/pex-geom/Ray.html
+function paintOnFace(ray,triangle) {
+    var EPS=0.0000001;
+    var u=vec3.create();
+    var v=vec3.create();    
+    vec3.subtract(u,triangle.b,triangle.a);
+    vec3.subtract(v,triangle.c,triangle.a);
+    var n=vec3.create();
+    vec3.cross(n,u,v);
+    if(vec3.length(n)<EPS) {
+        console.log("paintOnFace ret -1");
+        return -1;
+    }
+
+    var w0=vec3.create();
+    vec3.subtract(w0,ray.orig,triangle.a);
+
+    var a=-vec3.dot(n,w0);
+    var b=vec3.dot(n,ray.dir);
+    if(Math.abs(b)<EPS) {
+        console.log("paintOnFace ret -2 or -3");        
+        if(a==0) return -2;
+        else return -3;
+    }
+    var r=a/b;
+    if(r<-EPS) {
+        console.log("paintOnFace ret -4");
+        return -4;
+    }
+    // intersect point on the plane
+    var I=vec3.fromValues( ray.orig[0] + r * ray.dir[0],
+                           ray.orig[1] + r * ray.dir[1],
+                           ray.orig[2] + r * ray.dir[2] ); 
+
+    var uu=vec3.dot(u,u);
+    var uv=vec3.dot(u,v);
+    var vv=vec3.dot(v,v);
+    var w=vec3.create();
+    vec3.subtract(w,I,triangle.a);
+
+    var wu=vec3.dot(w,u);
+    var wv=vec3.dot(w,v);
+    var D=uv*uv-uu*vv;
+    var s=(uv*wv-vv*wu)/D;
+    if(s<-EPS || s>1.0+EPS) {
+        console.log("paintOnFace ret -5");
+        return -5;
+    }
+    var t=(uv*wu-uu*wv)/D;
+    if(t<-EPS||(s+t)>1.0+EPS) {
+        console.log("paintOnFace ret -6");
+        return -6;
+    }
+
+    var out=vec3.fromValues(
+        triangle.a[0] + u[0]*s + v[0]*t,
+        triangle.a[1] + u[1]*s + v[1]*t,
+        triangle.a[2] + u[2]*s + v[2]*t
+    );
+    console.log("paintOnFace:",u,v,s,t,out);
+    return out;
+}
+
 
 
 /////////////////
@@ -670,7 +736,7 @@ g_cross_prop.setDeck(g_atlas_deck);
 g_cross_prop.setIndex(IDX_CROSS);
 g_cross_prop.setScl(32);
 g_cross_prop.setLoc(0,0);
-g_cross_prop.setColor(Color.fromValues(1,1,1,0.4));
+g_cross_prop.setColor(Color.fromValues(1,1,1,0.7));
 g_hud_layer.insertProp(g_cross_prop);
 
 
