@@ -43,7 +43,7 @@ document.addEventListener("mousedown", function(e) {
                 var y=to_i(g_cursor_prop.cursor_hit_pos[1]+g_cursor_prop.cursor_hit_norm[1]*0.5);
                 var z=to_i(g_cursor_prop.cursor_hit_pos[2]+g_cursor_prop.cursor_hit_norm[2]*0.5);
                 var col=vec4.fromValues(1,1,1,1);//range(0.3,1.0),range(0.3,1.0),range(0.3,1.0),1.0);
-                putBlock(x,y,z,SHAPE_CUBE,col);
+                putBlock(x,y,z,SHAPE_SLOPE,col);
             }
         } else if(g_cur_tool == TOOL_REMOVE) {
             if(g_cursor_prop.cursor_hit_pos) {
@@ -304,8 +304,8 @@ function setLineBoxGeom(geom,xsz,ysz,zsz,col) {
 //                   //|
 //                /  / |
 //             /    F  |
-//          /     / |  |      -z               7   6
-//       /      /   |  |      /               4   5
+//          /     / |  |      -z                   5
+//       /      /   |  |      /                   4
 //     D ----/------|- C
 //    /   /         | /
 //   / /            |/                         3   2
@@ -417,6 +417,96 @@ function getVertSet8(blk) {
             face_xp_0, face_xp_1,
             face_xn_0, face_xn_1,
         ];
+    } else if(blk.shape==SHAPE_SLOPE) {
+        var a=out.a=vec3.fromValues(0+x,0+y,1+z);
+        var b=out.b=vec3.fromValues(1+x,0+y,1+z);
+        var c=out.c=vec3.fromValues(1+x,0+y,0+z);
+        var d=out.d=vec3.fromValues(0+x,0+y,0+z);
+        //e
+        var f=out.f=vec3.fromValues(1+x,1+y,1+z);
+        var g=out.g=vec3.fromValues(1+x,1+y,0+z);
+        //h
+
+        // ypxn(slope),yn,xp,zn,zp
+        out.num_vert=4+4+4+3+3; 
+        out.num_face=2+2+2+1+1;
+        out.positions = [
+            a,b,c,d, // -y
+            a,f,g,d, // +y -x, slope
+            b,c,g,f, // +x
+            a,b,f,   // +z
+            c,d,g,   // -z
+        ];
+
+        var uvary = new Float32Array(4);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xp,0,0,0);
+        var uv_xp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_xp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_xp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_xp_rb=vec2.fromValues(uvary[2],uvary[3]);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_slope,0,0,0);
+        var uv_slope_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_slope_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_slope_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_slope_rb=vec2.fromValues(uvary[2],uvary[3]);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yn,0,0,0);        
+        var uv_yn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_yn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_yn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_yn_rb=vec2.fromValues(uvary[2],uvary[3]);
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zp,0,0,0);        
+        var uv_zp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_zp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_zp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_zp_rb=vec2.fromValues(uvary[2],uvary[3]);                        
+        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zn,0,0,0);        
+        var uv_zn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_zn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_zn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_zn_rb=vec2.fromValues(uvary[2],uvary[3]);
+
+        out.uvs = [
+            uv_yn_lb, uv_yn_rb, uv_yn_rt, uv_yn_lt, // abcd
+            uv_slope_lb, uv_slope_rb, uv_slope_rt, uv_slope_lt, // afgd
+            uv_xp_lb, uv_xp_rb, uv_xp_rt, uv_xp_lt, // bcgf            
+            uv_zp_lb, uv_zp_rb, uv_zp_rt,  // abf
+            uv_zn_lb, uv_zn_rb, uv_zn_lt, // cdg
+        ];
+
+        
+        var col=blk.color;
+        var slopecol=vec4.clone(col);
+        var zncol=vec4.fromValues(col[0]*0.7,col[1]*0.7,col[2]*0.7,1);
+        var xpcol=vec4.fromValues(col[0]*0.6,col[1]*0.6,col[2]*0.6,1);
+        var zpcol=vec4.fromValues(col[0]*0.5,col[1]*0.5,col[2]*0.5,1);                        
+        var yncol=vec4.fromValues(col[0]*0.4,col[1]*0.4,col[2]*0.4,1);
+
+        out.colors = [
+            yncol,yncol,yncol,yncol,
+            slopecol,slopecol,slopecol,slopecol,
+            xpcol,xpcol,xpcol,xpcol,            
+            zpcol,zpcol,zpcol,
+            zncol,zncol,zncol,
+        ];
+
+        var face_yn_0 = [0,3,1]; // ADB
+        var face_yn_1 = [3,2,1]; // DCB
+        var face_slope_0 = [7,5,6]; // DFG
+        var face_slope_1 = [4,5,7]; // AFD
+        var face_xp_0 = [8,9,10]; // BCG
+        var face_xp_1 = [8,10,11]; // BGF        
+        var face_zp = [12,13,14]; // ABF
+        var face_zn = [15,16,17]; // CDG
+
+
+        out.faces = [
+            face_yn_0, face_yn_1,
+            face_slope_0, face_slope_1,
+            face_xp_0, face_xp_1,
+            face_zp,
+            face_zn
+        ];
+        
     }
     return out;
 }
@@ -464,19 +554,34 @@ class Chunk extends Prop3D {
             this.blocks.push(block);
         }
         if(dkind===undefined) {
-            if(shapeid!=SHAPE_CUBE) console.error("not impl");
+            
             var xpb=this.findBlock(ix+1,iy,iz);
-            if(xpb<0) block.uvind_xp=allocateUVIndex();
             var xnb=this.findBlock(ix-1,iy,iz);
-            if(xnb<0) block.uvind_xn=allocateUVIndex();
             var ypb=this.findBlock(ix,iy+1,iz);
-            if(ypb<0) block.uvind_yp=allocateUVIndex();
             var ynb=this.findBlock(ix,iy-1,iz);
-            if(ynb<0) block.uvind_yn=allocateUVIndex();
             var zpb=this.findBlock(ix,iy,iz+1);
-            if(zpb<0) block.uvind_zp=allocateUVIndex();
             var znb=this.findBlock(ix,iy,iz-1);
-            if(znb<0) block.uvind_zn=allocateUVIndex();
+
+            if(shapeid==SHAPE_CUBE) {
+                if(xpb<0) block.uvind_xp=allocateUVIndex();
+                if(xnb<0) block.uvind_xn=allocateUVIndex();
+                if(ypb<0) block.uvind_yp=allocateUVIndex();
+                if(ynb<0) block.uvind_yn=allocateUVIndex();
+                if(zpb<0) block.uvind_zp=allocateUVIndex();
+                if(znb<0) block.uvind_zn=allocateUVIndex();                
+            } else if(shapeid==SHAPE_SLOPE) {
+                if(xpb<0) block.uvind_xp=allocateUVIndex();
+                if(zpb<0) block.uvind_zp=allocateUVIndex();
+                if(znb<0) block.uvind_zn=allocateUVIndex();
+                if(ynb<0) block.uvind_yn=allocateUVIndex();
+                // slope side
+                if(xnb<0 || ypb<0 || znb<0 || zpb<0 ) block.uvind_slope=allocateUVIndex();
+            } else {
+                console.error("not impl");
+            }
+            
+            
+
         } else {
             block.uvind_xp=block.uvind_xn=block.uvind_yp=block.uvind_yn=block.uvind_zp=block.uvind_zn=dkind;
         }
