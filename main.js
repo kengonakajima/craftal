@@ -36,6 +36,13 @@ document.addEventListener("mousedown", function(e) {
                 var col=vec4.fromValues(1,1,1,1);//range(0.3,1.0),range(0.3,1.0),range(0.3,1.0),1.0);
                 putBlock(x,y,z,SHAPE_CUBE,col);
             }
+        } else if(g_cur_tool == TOOL_REMOVE) {
+            if(g_cursor_prop.cursor_hit_pos) {
+                var x=to_i(g_cursor_prop.cursor_hit_pos[0]);
+                var y=to_i(g_cursor_prop.cursor_hit_pos[1]);
+                var z=to_i(g_cursor_prop.cursor_hit_pos[2]);
+                removeBlock(x,y,z);
+            }
         } else if(g_cur_tool == TOOL_PENCIL) {
             if(g_cursor_prop.cursor_hit_block_pos) {
                 var x=to_i(g_cursor_prop.cursor_hit_block_pos[0]);
@@ -354,6 +361,16 @@ class Chunk extends Prop3D {
             block.uvind_xp=block.uvind_xn=block.uvind_yp=block.uvind_yn=block.uvind_zp=block.uvind_zn=dkind;
         }
     }
+    removeBlock(ix,iy,iz) {
+        for(var i in this.blocks) {
+            var b=this.blocks[i];
+            if(b.x==ix && b.y==iy && b.z==iz) {
+                this.blocks.splice(i,1);
+                this.updateMesh();                
+                return;
+            }
+        }
+    }
     updateMesh() {
         // block count
         var num_block = this.blocks.length;
@@ -519,6 +536,20 @@ function createNewChunk(x,y,z,shape,col,dkind) {
     return chk;
 }
 
+function removeBlock(x,y,z) {
+    var blk=findBlock(x,y,z);
+    if(!blk) {
+        console.log("no block at ",x,y,z);
+        return;
+    }
+    var chk=findChunkById(blk.chunk_id);
+    if(!chk) {
+        console.error("chk must be found");
+        return;
+    }
+    chk.removeBlock(x,y,z);
+}
+
 
 
 
@@ -608,13 +639,16 @@ g_hud_layer.insertProp(g_cross_prop);
 
 ///////////////////////////////
 TOOL_BLOCK=1;
-TOOL_PENCIL=2;
+TOOL_REMOVE=2;
+TOOL_PENCIL=3;
+
 var g_cur_tool;
 function setTool(t) {
     g_cur_tool= t;
     var nm="unknown";
     if(t==TOOL_BLOCK) nm = "Block";
     else if(t==TOOL_PENCIL) nm="Pencil";
+    else if(t==TOOL_REMOVE) nm="Remove";
     document.getElementById("tool").innerHTML="Tool: " + nm;
 }
 setTool(TOOL_BLOCK);
@@ -674,7 +708,8 @@ function animate() {
         var front=0,side=0;
         if(g_keyboard) {
             if(g_keyboard.getKey('1')) setTool(TOOL_BLOCK);
-            if(g_keyboard.getKey('2')) setTool(TOOL_PENCIL);
+            if(g_keyboard.getKey('2')) setTool(TOOL_REMOVE);
+            if(g_keyboard.getKey('3')) setTool(TOOL_PENCIL);            
             if(g_keyboard.getKey('a')) side-=1;
             if(g_keyboard.getKey('d')) side+=1;
             if(g_keyboard.getKey('w')) front+=1;
