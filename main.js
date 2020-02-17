@@ -340,43 +340,43 @@ function getVertSet8(blk) {
         
         var uvary = new Float32Array(4);
         g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xp,0,0,0);
-        out.uv_xp_lt=vec2.fromValues(uvary[0],uvary[1]);
-        out.uv_xp_rt=vec2.fromValues(uvary[2],uvary[1]);
-        out.uv_xp_lb=vec2.fromValues(uvary[0],uvary[3]);
-        out.uv_xp_rb=vec2.fromValues(uvary[2],uvary[3]);
+        var uv_xp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_xp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_xp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_xp_rb=vec2.fromValues(uvary[2],uvary[3]);
         g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xn,0,0,0);
-        out.uv_xn_lt=vec2.fromValues(uvary[0],uvary[1]);
-        out.uv_xn_rt=vec2.fromValues(uvary[2],uvary[1]);
-        out.uv_xn_lb=vec2.fromValues(uvary[0],uvary[3]);
-        out.uv_xn_rb=vec2.fromValues(uvary[2],uvary[3]);
+        var uv_xn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_xn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_xn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_xn_rb=vec2.fromValues(uvary[2],uvary[3]);
         g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yp,0,0,0);        
-        out.uv_yp_lt=vec2.fromValues(uvary[0],uvary[1]);
-        out.uv_yp_rt=vec2.fromValues(uvary[2],uvary[1]);
-        out.uv_yp_lb=vec2.fromValues(uvary[0],uvary[3]);
-        out.uv_yp_rb=vec2.fromValues(uvary[2],uvary[3]);
+        var uv_yp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_yp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_yp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_yp_rb=vec2.fromValues(uvary[2],uvary[3]);
         g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yn,0,0,0);        
-        out.uv_yn_lt=vec2.fromValues(uvary[0],uvary[1]);
-        out.uv_yn_rt=vec2.fromValues(uvary[2],uvary[1]);
-        out.uv_yn_lb=vec2.fromValues(uvary[0],uvary[3]);
-        out.uv_yn_rb=vec2.fromValues(uvary[2],uvary[3]);
+        var uv_yn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_yn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_yn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_yn_rb=vec2.fromValues(uvary[2],uvary[3]);
         g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zp,0,0,0);        
-        out.uv_zp_lt=vec2.fromValues(uvary[0],uvary[1]);
-        out.uv_zp_rt=vec2.fromValues(uvary[2],uvary[1]);
-        out.uv_zp_lb=vec2.fromValues(uvary[0],uvary[3]);
-        out.uv_zp_rb=vec2.fromValues(uvary[2],uvary[3]);                        
+        var uv_zp_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_zp_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_zp_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_zp_rb=vec2.fromValues(uvary[2],uvary[3]);                        
         g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zn,0,0,0);        
-        out.uv_zn_lt=vec2.fromValues(uvary[0],uvary[1]);
-        out.uv_zn_rt=vec2.fromValues(uvary[2],uvary[1]);
-        out.uv_zn_lb=vec2.fromValues(uvary[0],uvary[3]);
-        out.uv_zn_rb=vec2.fromValues(uvary[2],uvary[3]);
+        var uv_zn_lt=vec2.fromValues(uvary[0],uvary[1]);
+        var uv_zn_rt=vec2.fromValues(uvary[2],uvary[1]);
+        var uv_zn_lb=vec2.fromValues(uvary[0],uvary[3]);
+        var uv_zn_rb=vec2.fromValues(uvary[2],uvary[3]);
 
         out.uvs = [
-            out.uv_yn_lb, out.uv_yn_rb, out.uv_yn_rt, out.uv_yn_lt, // abcd
-            out.uv_yp_lb, out.uv_yp_rb, out.uv_yp_rt, out.uv_yp_lt, // efgh
-            out.uv_zp_lb, out.uv_zp_rb, out.uv_zp_rt, out.uv_zp_lt, // abfe
-            out.uv_zn_lb, out.uv_zn_rb, out.uv_zn_rt, out.uv_zn_lt, // cdhg
-            out.uv_xp_lb, out.uv_xp_rb, out.uv_xp_rt, out.uv_xp_lt, // bcgf
-            out.uv_xn_lb, out.uv_xn_rb, out.uv_xn_rt, out.uv_xn_lt, // daeh
+            uv_yn_lb, uv_yn_rb, uv_yn_rt, uv_yn_lt, // abcd
+            uv_yp_lb, uv_yp_rb, uv_yp_rt, uv_yp_lt, // efgh
+            uv_zp_lb, uv_zp_rb, uv_zp_rt, uv_zp_lt, // abfe
+            uv_zn_lb, uv_zn_rb, uv_zn_rt, uv_zn_lt, // cdhg
+            uv_xp_lb, uv_xp_rb, uv_xp_rt, uv_xp_lt, // bcgf
+            uv_xn_lb, uv_xn_rb, uv_xn_rt, uv_xn_lt, // daeh
         ];
 
         
