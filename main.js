@@ -49,8 +49,17 @@ document.addEventListener("mousedown", function(e) {
                 var y=to_i(g_cursor_prop.cursor_hit_block_pos[1]);
                 var z=to_i(g_cursor_prop.cursor_hit_block_pos[2]);
                 var blk = findBlock(x,y,z);
+                if(!blk) console.error("blk must not null");
+                
                 var vv=getVertSet8(blk);
-                console.log("BLK:",blk,vv);
+                console.log("BLK:",blk,vv,g_cursor_prop.cursor_hit_norm);
+                if(blk.shape==SHAPE_CUBE) {
+                    if(g_cursor_prop.cursor_hit_norm[1]==1) {
+                        console.log("top"); // HFG, EFH
+
+                    }                    
+                }
+
             }
         }
     }
@@ -254,15 +263,27 @@ function getVertSet8(blk) {
     var x=blk.x, y=blk.y, z=blk.z;
     var out={};
     if(blk.shape==SHAPE_CUBE) {
-        out.a=vec3.fromValues(0+x,0+y,1+z);
-        out.b=vec3.fromValues(1+x,0+y,1+z);
-        out.c=vec3.fromValues(1+x,0+y,0+z);
-        out.d=vec3.fromValues(0+x,0+y,0+z);
-        out.e=vec3.fromValues(0+x,1+y,1+z);
-        out.f=vec3.fromValues(1+x,1+y,1+z);
-        out.g=vec3.fromValues(1+x,1+y,0+z);
-        out.h=vec3.fromValues(0+x,1+y,0+z);
+        var a=out.a=vec3.fromValues(0+x,0+y,1+z);
+        var b=out.b=vec3.fromValues(1+x,0+y,1+z);
+        var c=out.c=vec3.fromValues(1+x,0+y,0+z);
+        var d=out.d=vec3.fromValues(0+x,0+y,0+z);
+        var e=out.e=vec3.fromValues(0+x,1+y,1+z);
+        var f=out.f=vec3.fromValues(1+x,1+y,1+z);
+        var g=out.g=vec3.fromValues(1+x,1+y,0+z);
+        var h=out.h=vec3.fromValues(0+x,1+y,0+z);
 
+        out.num_vert=24;
+        out.num_face=12;
+        
+        out.positions = [
+            a,b,c,d, // -y
+            e,f,g,h, // +y
+            a,b,f,e, // +z
+            c,d,h,g, // -z
+            b,c,g,f, // +x
+            d,a,e,h, // -x
+        ];
+        
         var uvary = new Float32Array(4);
         g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xp,0,0,0);
         out.uv_xp_lt=vec2.fromValues(uvary[0],uvary[1]);
@@ -294,6 +315,16 @@ function getVertSet8(blk) {
         out.uv_zn_rt=vec2.fromValues(uvary[2],uvary[1]);
         out.uv_zn_lb=vec2.fromValues(uvary[0],uvary[3]);
         out.uv_zn_rb=vec2.fromValues(uvary[2],uvary[3]);
+
+        out.uvs = [
+            out.uv_yn_lb, out.uv_yn_rb, out.uv_yn_rt, out.uv_yn_lt, // abcd
+            out.uv_yp_lb, out.uv_yp_rb, out.uv_yp_rt, out.uv_yp_lt, // efgh
+            out.uv_zp_lb, out.uv_zp_rb, out.uv_zp_rt, out.uv_zp_lt, // abfe
+            out.uv_zn_lb, out.uv_zn_rb, out.uv_zn_rt, out.uv_zn_lt, // cdhg
+            out.uv_xp_lb, out.uv_xp_rb, out.uv_xp_rt, out.uv_xp_lt, // bcgf
+            out.uv_xn_lb, out.uv_xn_rb, out.uv_xn_rt, out.uv_xn_lt, // daeh
+        ];
+
         
         var col=blk.color;
         out.ypcol=vec4.clone(col);
@@ -301,8 +332,37 @@ function getVertSet8(blk) {
         out.zncol=vec4.fromValues(col[0]*0.7,col[1]*0.7,col[2]*0.7,1);
         out.xpcol=vec4.fromValues(col[0]*0.6,col[1]*0.6,col[2]*0.6,1);
         out.zpcol=vec4.fromValues(col[0]*0.5,col[1]*0.5,col[2]*0.5,1);                        
-        out.yncol=vec4.fromValues(col[0]*0.4,col[1]*0.4,col[2]*0.4,1);                        
-        
+        out.yncol=vec4.fromValues(col[0]*0.4,col[1]*0.4,col[2]*0.4,1);
+
+        out.colors = [
+            out.yncol,out.yncol,out.yncol,out.yncol,
+            out.ypcol,out.ypcol,out.ypcol,out.ypcol,
+            out.zpcol,out.zpcol,out.zpcol,out.zpcol,
+            out.zncol,out.zncol,out.zncol,out.zncol,
+            out.xpcol,out.xpcol,out.xpcol,out.xpcol,
+            out.xncol,out.xncol,out.xncol,out.xncol,
+        ];
+
+        out.face_yn_0 = [0,3,1]; // ADB
+        out.face_yn_1 = [3,2,1]; // DCB
+        out.face_yp_0 = [7,5,6]; // HFG
+        out.face_yp_1 = [4,5,7]; // EFH
+        out.face_zp_0 = [8,9,10]; // ABF
+        out.face_zp_1 = [8,10,11]; // AFE
+        out.face_zn_0 = [12,13,14]; // CDH
+        out.face_zn_1 = [12,14,15]; // CHG
+        out.face_xp_0 = [16,17,18]; // BCG
+        out.face_xp_1 = [16,18,19]; // BGF
+        out.face_xn_0 = [20,21,22]; // DAE
+        out.face_xn_1 = [20,22,23]; // DEH
+        out.faces = [
+            out.face_yn_0, out.face_yn_1,
+            out.face_yp_0, out.face_yp_1,
+            out.face_zp_0, out.face_zp_1,
+            out.face_zn_0, out.face_zn_1,
+            out.face_xp_0, out.face_xp_1,
+            out.face_xn_0, out.face_xn_1,
+        ];
     }
     return out;
 }
@@ -419,52 +479,14 @@ class Chunk extends Prop3D {
             var block=this.blocks[bi];
             // 0,0,0のブロック基準点は(0,0,0)にあるようにする
             var vv=getVertSet8(block);
-//            console.log("VV:",vv);
+            console.log("VV:",vv);
+            for(var i=0;i<vv.num_vert;i++) geom.setPosition3v(i+vi,vv.positions[i]);
+            for(var i=0;i<vv.num_vert;i++) geom.setUV2v(i+vi,vv.uvs[i]);
+            for(var i=0;i<vv.num_vert;i++) geom.setColor4v(i+vi,vv.colors[i]);
+            for(var i=0;i<vv.num_face;i++) geom.setFaceInds(i+fi,vv.faces[i][0]+vi, vv.faces[i][1]+vi,vv.faces[i][2]+vi);
             
-            geom.setPosition3v(0+vi,vv.a); geom.setPosition3v(1+vi,vv.b); geom.setPosition3v(2+vi,vv.c); geom.setPosition3v(3+vi,vv.d);//-y
-            geom.setPosition3v(4+vi,vv.e); geom.setPosition3v(5+vi,vv.f); geom.setPosition3v(6+vi,vv.g); geom.setPosition3v(7+vi,vv.h);//+y
-            geom.setPosition3v(8+vi,vv.a); geom.setPosition3v(9+vi,vv.b); geom.setPosition3v(10+vi,vv.f); geom.setPosition3v(11+vi,vv.e);//+z
-            geom.setPosition3v(12+vi,vv.c); geom.setPosition3v(13+vi,vv.d); geom.setPosition3v(14+vi,vv.h); geom.setPosition3v(15+vi,vv.g);//-z
-            geom.setPosition3v(16+vi,vv.b); geom.setPosition3v(17+vi,vv.c); geom.setPosition3v(18+vi,vv.g); geom.setPosition3v(19+vi,vv.f);//+x
-            geom.setPosition3v(20+vi,vv.d); geom.setPosition3v(21+vi,vv.a); geom.setPosition3v(22+vi,vv.e); geom.setPosition3v(23+vi,vv.h);//-x
-
-            geom.setUV2v(0+vi,vv.uv_yn_lb); geom.setUV2v(1+vi,vv.uv_yn_rb); geom.setUV2v(2+vi,vv.uv_yn_rt); geom.setUV2v(3+vi,vv.uv_yn_lt); // abcd
-            geom.setUV2v(4+vi,vv.uv_yp_lb); geom.setUV2v(5+vi,vv.uv_yp_rb); geom.setUV2v(6+vi,vv.uv_yp_rt); geom.setUV2v(7+vi,vv.uv_yp_lt); // efgh
-            geom.setUV2v(8+vi,vv.uv_zp_lb); geom.setUV2v(9+vi,vv.uv_zp_rb); geom.setUV2v(10+vi,vv.uv_zp_rt); geom.setUV2v(11+vi,vv.uv_zp_lt); // abfe
-            geom.setUV2v(12+vi,vv.uv_zn_lb); geom.setUV2v(13+vi,vv.uv_zn_rb); geom.setUV2v(14+vi,vv.uv_zn_rt); geom.setUV2v(15+vi,vv.uv_zn_lt); // cdhg
-            geom.setUV2v(16+vi,vv.uv_xp_lb); geom.setUV2v(17+vi,vv.uv_xp_rb); geom.setUV2v(18+vi,vv.uv_xp_rt); geom.setUV2v(19+vi,vv.uv_xp_lt); // bcgf
-            geom.setUV2v(20+vi,vv.uv_xn_lb); geom.setUV2v(21+vi,vv.uv_xn_rb); geom.setUV2v(22+vi,vv.uv_xn_rt); geom.setUV2v(23+vi,vv.uv_xn_lt); // daeh
-
-
-            // colors
-            for(var i=0;i<4;i++) geom.setColor4v(i+vi, vv.yncol);  
-            for(var i=4;i<8;i++) geom.setColor4v(i+vi, vv.ypcol);
-            for(var i=8;i<12;i++) geom.setColor4v(i+vi, vv.zpcol);
-            for(var i=12;i<16;i++) geom.setColor4v(i+vi, vv.zncol);
-            for(var i=16;i<20;i++) geom.setColor4v(i+vi, vv.xpcol);
-            for(var i=20;i<24;i++) geom.setColor4v(i+vi, vv.xncol);
-
-            
-            // bottom
-            geom.setFaceInds(0+fi, 0+vi,3+vi,1+vi); // ADB
-            geom.setFaceInds(1+fi, 3+vi,2+vi,1+vi); // DCB
-            // top
-            geom.setFaceInds(2+fi, 7+vi,5+vi,6+vi); // HFG
-            geom.setFaceInds(3+fi, 4+vi,5+vi,7+vi); // EFH
-            // +z abf, afe
-            geom.setFaceInds(4+fi, 8+vi,9+vi,10+vi); // abf
-            geom.setFaceInds(5+fi, 8+vi,10+vi,11+vi); // afe
-            // -z cdh, chg
-            geom.setFaceInds(6+fi, 12+vi,13+vi,14+vi); // cdh
-            geom.setFaceInds(7+fi, 12+vi,14+vi,15+vi); // chg
-            // front
-            geom.setFaceInds(8+fi, 16+vi,17+vi,18+vi); // EAB
-            geom.setFaceInds(9+fi, 16+vi,18+vi,19+vi); // EBF
-            // rear
-            geom.setFaceInds(10+fi, 20+vi,21+vi,22+vi); // HCD
-            geom.setFaceInds(11+fi, 20+vi,22+vi,23+vi); // HGC
-            vi+=24;
-            fi+=12;
+            vi+=vv.num_vert;
+            fi+=vv.num_face;
         }
 //        console.log("updateMesh: geom:",geom);
         this.setGeom(geom);    // TODO: dispose older one     
@@ -735,7 +757,7 @@ function animate() {
                 var t=now();
                 if(g_main_camera.jump_at && g_main_camera.last_jump_key==false) {
                     var dt=t-g_main_camera.jump_at;
-                    if(dt<0.2) {
+                    if(dt<0.3) {
                         g_main_camera.flying= !g_main_camera.flying;
                     }
                 }
