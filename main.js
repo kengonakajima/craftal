@@ -38,9 +38,9 @@ document.addEventListener("mousedown", function(e) {
             }
         } else if(g_cur_tool == TOOL_REMOVE) {
             if(g_cursor_prop.cursor_hit_pos) {
-                var x=to_i(g_cursor_prop.cursor_hit_pos[0]);
-                var y=to_i(g_cursor_prop.cursor_hit_pos[1]);
-                var z=to_i(g_cursor_prop.cursor_hit_pos[2]);
+                var x=to_i(g_cursor_prop.cursor_hit_block_pos[0]);
+                var y=to_i(g_cursor_prop.cursor_hit_block_pos[1]);
+                var z=to_i(g_cursor_prop.cursor_hit_block_pos[2]);
                 removeBlock(x,y,z);
             }
         } else if(g_cur_tool == TOOL_PENCIL) {
@@ -232,7 +232,6 @@ function freeUVIndex(ind) {
         return;
     }
     g_uv_alloc_table[ind]=-1;
-    console.log("freeUVIndex: freed:",ind);
 }
 
 ////////////////////////
@@ -471,10 +470,12 @@ class Chunk extends Prop3D {
                 freeUVIndex(b.uvind_yn);
                 freeUVIndex(b.uvind_zp);
                 freeUVIndex(b.uvind_zn);                
-                this.updateMesh();                
-                return;
+                console.log("removeBlock: done,",ix,iy,iz);
+                return true;
             }
         }
+        console.log("removeBlock: not found: ",ix,iy,iz);
+        return false;
     }
     updateMesh() {
         // block count
@@ -613,7 +614,9 @@ function removeBlock(x,y,z) {
         console.error("chk must be found");
         return;
     }
-    chk.removeBlock(x,y,z);
+    if(chk.removeBlock(x,y,z)) {
+        chk.updateMesh();
+    }
 }
 
 
