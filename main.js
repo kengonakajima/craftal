@@ -56,11 +56,25 @@ document.addEventListener("mousedown", function(e) {
                 if(blk.shape==SHAPE_CUBE) {
                     if(g_cursor_prop.cursor_hit_norm[1]==1) {
                         var t={};
+                        // HFG
                         t.a=vv.positions[vv.face_yp_0[0]];
                         t.b=vv.positions[vv.face_yp_0[1]];
                         t.c=vv.positions[vv.face_yp_0[2]];
-                        console.log("top",t,g_cursor_prop.simray);
-                        paintOnFace(g_cursor_prop.simray,t);
+                        
+                        var p=getPointOnFace(g_cursor_prop.simray,t);
+                        var uv_a=vv.uvs[vv.face_yp_0[0]];
+                        var uv_b=vv.uvs[vv.face_yp_0[1]];
+                        var uv_c=vv.uvs[vv.face_yp_0[2]];
+                        var uv_ab=vec2.fromValues(uv_b[0]-uv_a[0],uv_b[1]-uv_a[1]);
+                        var uv_ac=vec2.fromValues(uv_c[0]-uv_a[0],uv_c[1]-uv_a[1]);
+                        var uv_pos=vec2.fromValues(uv_a[0]+uv_ab[0]*p.s+uv_ac[0]*p.t,
+                                                   uv_a[1]+uv_ab[1]*p.s+uv_ac[1]*p.t);
+                        var pix_x = to_i(uv_pos[0]*256);
+                        var pix_y = to_i(uv_pos[1]*256);
+                        console.log("hoge",uv_ab,uv_ac,uv_a,uv_pos,pix_x,pix_y);
+//                        var uv_pos=vec2.fromValues(uv_a[0]*s+uv_)
+
+                        
                     }                    
                 }
 
@@ -592,7 +606,7 @@ function removeBlock(x,y,z) {
 
 
 // https://vorg.github.io/pex/docs/pex-geom/Ray.html
-function paintOnFace(ray,triangle) {
+function getPointOnFace(ray,triangle) {
     var EPS=0.0000001;
     var u=vec3.create();
     var v=vec3.create();    
@@ -601,8 +615,8 @@ function paintOnFace(ray,triangle) {
     var n=vec3.create();
     vec3.cross(n,u,v);
     if(vec3.length(n)<EPS) {
-        console.log("paintOnFace ret -1");
-        return -1;
+        console.log("getPointOnFace ret -1");
+        return null;
     }
 
     var w0=vec3.create();
@@ -611,14 +625,14 @@ function paintOnFace(ray,triangle) {
     var a=-vec3.dot(n,w0);
     var b=vec3.dot(n,ray.dir);
     if(Math.abs(b)<EPS) {
-        console.log("paintOnFace ret -2 or -3");        
-        if(a==0) return -2;
-        else return -3;
+        console.log("getPointOnFace ret -2 or -3");        
+        if(a==0) return null;
+        else return null;
     }
     var r=a/b;
     if(r<-EPS) {
-        console.log("paintOnFace ret -4");
-        return -4;
+        console.log("getPointOnFace ret -4");
+        return null;
     }
     // intersect point on the plane
     var I=vec3.fromValues( ray.orig[0] + r * ray.dir[0],
@@ -636,21 +650,22 @@ function paintOnFace(ray,triangle) {
     var D=uv*uv-uu*vv;
     var s=(uv*wv-vv*wu)/D;
     if(s<-EPS || s>1.0+EPS) {
-        console.log("paintOnFace ret -5");
-        return -5;
+        console.log("getPointOnFace ret -5");
+        return null;
     }
     var t=(uv*wu-uu*wv)/D;
     if(t<-EPS||(s+t)>1.0+EPS) {
-        console.log("paintOnFace ret -6");
-        return -6;
+        console.log("getPointOnFace ret -6");
+        return null;
     }
 
-    var out=vec3.fromValues(
+    var outpos=vec3.fromValues(
         triangle.a[0] + u[0]*s + v[0]*t,
         triangle.a[1] + u[1]*s + v[1]*t,
         triangle.a[2] + u[2]*s + v[2]*t
     );
-    console.log("paintOnFace:",u,v,s,t,out);
+    var out = { u:u, v:v, s:s, t:t, pos:outpos };    
+    console.log("getPointOnFace:",u,v,s,t,out);
     return out;
 }
 
