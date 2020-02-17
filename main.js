@@ -381,20 +381,20 @@ function getVertSet8(blk) {
 
         
         var col=blk.color;
-        out.ypcol=vec4.clone(col);
-        out.xncol=vec4.fromValues(col[0]*0.8,col[1]*0.8,col[2]*0.8,1);
-        out.zncol=vec4.fromValues(col[0]*0.7,col[1]*0.7,col[2]*0.7,1);
-        out.xpcol=vec4.fromValues(col[0]*0.6,col[1]*0.6,col[2]*0.6,1);
-        out.zpcol=vec4.fromValues(col[0]*0.5,col[1]*0.5,col[2]*0.5,1);                        
-        out.yncol=vec4.fromValues(col[0]*0.4,col[1]*0.4,col[2]*0.4,1);
+        var ypcol=vec4.clone(col);
+        var xncol=vec4.fromValues(col[0]*0.8,col[1]*0.8,col[2]*0.8,1);
+        var zncol=vec4.fromValues(col[0]*0.7,col[1]*0.7,col[2]*0.7,1);
+        var xpcol=vec4.fromValues(col[0]*0.6,col[1]*0.6,col[2]*0.6,1);
+        var zpcol=vec4.fromValues(col[0]*0.5,col[1]*0.5,col[2]*0.5,1);                        
+        var yncol=vec4.fromValues(col[0]*0.4,col[1]*0.4,col[2]*0.4,1);
 
         out.colors = [
-            out.yncol,out.yncol,out.yncol,out.yncol,
-            out.ypcol,out.ypcol,out.ypcol,out.ypcol,
-            out.zpcol,out.zpcol,out.zpcol,out.zpcol,
-            out.zncol,out.zncol,out.zncol,out.zncol,
-            out.xpcol,out.xpcol,out.xpcol,out.xpcol,
-            out.xncol,out.xncol,out.xncol,out.xncol,
+            yncol,yncol,yncol,yncol,
+            ypcol,ypcol,ypcol,ypcol,
+            zpcol,zpcol,zpcol,zpcol,
+            zncol,zncol,zncol,zncol,
+            xpcol,xpcol,xpcol,xpcol,
+            xncol,xncol,xncol,xncol,
         ];
 
         var face_yn_0 = [0,3,1]; // ADB
