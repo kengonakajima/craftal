@@ -60,11 +60,11 @@ document.addEventListener("mousedown", function(e) {
                 var blk = findBlock(x,y,z);
                 if(!blk) console.error("blk must not null");
                 
-                var vv=getVertSet8(blk);
+                var vv=getVertSet(blk);
                 console.log("BLK:",blk,vv,g_cursor_prop.cursor_hit_norm);
 
                 // 全部の面について調べるか。
-                for(var i=0;i<vv.num_face;i++) {
+                for(var i=0;i<vv.num_faces;i++) {
                     var face = vv.faces[i];
                     var t={};
                     t.a=vv.positions[vv.faces[i][0]];
@@ -313,21 +313,21 @@ function setLineBoxGeom(geom,xsz,ysz,zsz,col) {
 //  -d,-d,d
 //
 //
-function getVertSet8(blk) {
+function getVertSet(blk) {
     var x=blk.x, y=blk.y, z=blk.z;
     var out={};
     if(blk.shape==SHAPE_CUBE) {
-        var a=out.a=vec3.fromValues(0+x,0+y,1+z);
-        var b=out.b=vec3.fromValues(1+x,0+y,1+z);
-        var c=out.c=vec3.fromValues(1+x,0+y,0+z);
-        var d=out.d=vec3.fromValues(0+x,0+y,0+z);
-        var e=out.e=vec3.fromValues(0+x,1+y,1+z);
-        var f=out.f=vec3.fromValues(1+x,1+y,1+z);
-        var g=out.g=vec3.fromValues(1+x,1+y,0+z);
-        var h=out.h=vec3.fromValues(0+x,1+y,0+z);
+        var a=vec3.fromValues(0+x,0+y,1+z);
+        var b=vec3.fromValues(1+x,0+y,1+z);
+        var c=vec3.fromValues(1+x,0+y,0+z);
+        var d=vec3.fromValues(0+x,0+y,0+z);
+        var e=vec3.fromValues(0+x,1+y,1+z);
+        var f=vec3.fromValues(1+x,1+y,1+z);
+        var g=vec3.fromValues(1+x,1+y,0+z);
+        var h=vec3.fromValues(0+x,1+y,0+z);
 
-        out.num_vert=24;
-        out.num_face=12;
+        out.num_verts=24;
+        out.num_faces=12;
         
         out.positions = [
             a,b,c,d, // -y
@@ -428,8 +428,8 @@ function getVertSet8(blk) {
         //h
 
         // ypxn(slope),yn,xp,zn,zp
-        out.num_vert=4+4+4+3+3; 
-        out.num_face=2+2+2+1+1;
+        out.num_verts=4+4+4+3+3; 
+        out.num_faces=2+2+2+1+1;
         out.positions = [
             a,b,c,d, // -y
             a,f,g,d, // +y -x, slope
@@ -608,10 +608,10 @@ class Chunk extends Prop3D {
         // block count
         var num_block = this.blocks.length;
         // vert count
-        var num_vert = num_block * 6*4;
+        var num_verts = num_block * 6*4;
         // face count
-        var num_face = num_block * 6*2;
-        var geom = new FaceGeometry(num_vert,num_face);
+        var num_faces = num_block * 6*2;
+        var geom = new FaceGeometry(num_verts,num_faces);
 
 
 
@@ -636,14 +636,14 @@ class Chunk extends Prop3D {
         for(var bi=0;bi<num_block;bi++) {
             var block=this.blocks[bi];
             // 0,0,0のブロック基準点は(0,0,0)にあるようにする
-            var vv=getVertSet8(block);
-            for(var i=0;i<vv.num_vert;i++) geom.setPosition3v(i+vi,vv.positions[i]);
-            for(var i=0;i<vv.num_vert;i++) geom.setUV2v(i+vi,vv.uvs[i]);
-            for(var i=0;i<vv.num_vert;i++) geom.setColor4v(i+vi,vv.colors[i]);
-            for(var i=0;i<vv.num_face;i++) geom.setFaceInds(i+fi,vv.faces[i][0]+vi, vv.faces[i][1]+vi,vv.faces[i][2]+vi);
+            var vv=getVertSet(block);
+            for(var i=0;i<vv.num_verts;i++) geom.setPosition3v(i+vi,vv.positions[i]);
+            for(var i=0;i<vv.num_verts;i++) geom.setUV2v(i+vi,vv.uvs[i]);
+            for(var i=0;i<vv.num_verts;i++) geom.setColor4v(i+vi,vv.colors[i]);
+            for(var i=0;i<vv.num_faces;i++) geom.setFaceInds(i+fi,vv.faces[i][0]+vi, vv.faces[i][1]+vi,vv.faces[i][2]+vi);
             
-            vi+=vv.num_vert;
-            fi+=vv.num_face;
+            vi+=vv.num_verts;
+            fi+=vv.num_faces;
         }
 //        console.log("updateMesh: geom:",geom);
         this.setGeom(geom);    // TODO: dispose older one     
@@ -820,22 +820,46 @@ function getPointOnFace(ray,triangle) {
 
 
 var linemat=new PrimColorShaderMaterial();
-var linegeom = new LineGeometry(24,12);
-setLineBoxGeom(linegeom,0.505,0.505,0.505,WHITE);
 
 var g_cursor_prop = new Prop3D();
-g_cursor_prop.setGeom(linegeom);
+//g_cursor_prop.setGeom(linegeom);
 g_cursor_prop.setMaterial(linemat);
 g_main_layer.insertProp(g_cursor_prop);
 g_cursor_prop.setBlockLoc = function(x,y,z) {
-    this.setScl(1.0001,1.0001,1.0001); // 1.0で問題ないはずなのに、ちょっと大きくしないとブロックの中に隠れるようになってしまう。。    
-    this.setLoc(Math.floor(x)+0.5,Math.floor(y)+0.5,Math.floor(z)+0.5);
-}
-g_cursor_prop.setBoundsLoc = function(minv,maxv) {
-    var sx=maxv[0]-minv[0], sy=maxv[1]-minv[1], sz=maxv[2]-minv[2];
-    this.setScl(sx,sy,sz);
-    var d=vec3.fromValues(sx/2,sy/2,sz/2);
-    this.setLoc(minv[0]+d[0],minv[1]+d[1],minv[2]+d[2]);
+    var blk = findBlock(x,y,z);
+    if(!blk) {
+        console.error("setblockloc: cant find block:",x,y,z);
+        return;
+    }
+    var relv=vec3.fromValues(-x,-y,-z);
+    var vv=getVertSet(blk);
+    var num_lines = vv.num_faces * 3;
+    var linegeom = new LineGeometry(num_lines*2,num_lines);
+    for(var i=0;i<vv.num_faces;i++) {
+        var a=vec3.clone(vv.positions[vv.faces[i][0]]);
+        var b=vec3.clone(vv.positions[vv.faces[i][1]]);
+        var c=vec3.clone(vv.positions[vv.faces[i][2]]);
+        vec3.add(a,a,relv);
+        vec3.add(b,b,relv);
+        vec3.add(c,c,relv);        
+        
+        
+//        console.log("AAA:",a,b,c);
+        linegeom.setPosition3v(i*6+0,a);
+        linegeom.setPosition3v(i*6+1,b);
+        linegeom.setPosition3v(i*6+2,b);
+        linegeom.setPosition3v(i*6+3,c);
+        linegeom.setPosition3v(i*6+4,c);
+        linegeom.setPosition3v(i*6+5,a);
+        for(var j=0;j<6;j++) {
+            linegeom.setColor4v(i*6+j,vec4.fromValues(1,1,1,1));
+            linegeom.setIndex(i*6+j,i*6+j);
+        }
+    }
+    this.setGeom(linegeom);
+    var mgn=0.002;
+    this.setScl(1+mgn*2,1+mgn*2,1+mgn*2); // 1.0で問題ないはずなのに、ちょっと大きくしないとブロックの中に隠れるようになってしまう。。    
+    this.setLoc(x-mgn,y-mgn,z-mgn);
 }
 
 
@@ -880,7 +904,7 @@ g_cursor_prop.prop3DPoll = function(dt) {
     this.setVisible(true);
     this.cursor_hit_norm=hitnorm;
     this.cursor_hit_pos=hitpos;
-    this.cursor_hit_block_pos=blockpos;
+    this.cursor_hit_block_pos=blockpos;    
     this.setBlockLoc(hx,hy,hz);
 
 
