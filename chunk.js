@@ -309,7 +309,6 @@ class Chunk extends Prop3D {
         if(shapeid==SHAPE_CUBE) num_tile_need=6; else if(shapeid==SHAPE_SLOPE) num_tile_need=5;
         block.uvinds=new Int32Array(num_tile_need);        
         for(var i=0;i<num_tile_need;i++) {
-
             if(dkind===undefined) {            
                 block.uvinds[i]=allocateUVIndex(); // must success.
             } else {
