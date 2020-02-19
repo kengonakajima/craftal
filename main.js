@@ -231,7 +231,7 @@ g_atlas_deck.setTexture(g_atlas_tex);
 g_atlas_deck.setSize(16,16,16,16);
 
 var g_model_img = new MoyaiImage();
-g_model_img.loadPNG("./modeltex.png",512,512);
+g_model_img.loadPNG("./modeltexgrid.png",512,512);
 
 
 var g_model_tex = new Texture();
