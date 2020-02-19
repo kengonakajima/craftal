@@ -522,7 +522,7 @@ class Chunk extends Prop3D {
         this.blocks=[];
 
         this.enable_frustum_culling = false;
-        this.setMaterial(g_colshader);
+        this.setMaterial(g_collitshader);
         this.setTexture(tex);
         this.setScl(1,1,1);
         this.setLoc(0,0,0);
@@ -667,6 +667,7 @@ function findBlock(x,y,z) {
 ///////////////
 
 var g_colshader = new DefaultColorShaderMaterial();
+var g_collitshader = new DefaultColorLitShaderMaterial();
 
 function createGroundChunk(x0,z0,x1,z1) {
     var chk=new Chunk(g_atlas_tex);
@@ -674,7 +675,7 @@ function createGroundChunk(x0,z0,x1,z1) {
         for(var x=x0;x<=x1;x++) {
             var r=1;
             if((x+z)%2==0) r=0.8;
-            var col=vec4.fromValues(0.2*r,0.2*r,0.2*r,1);
+            var col=vec4.fromValues(r,r,r,1);
             chk.setBlock(x,-1,z,SHAPE_CUBE,col,IDX_GROUND);
         }
     }
