@@ -185,7 +185,7 @@ function getPointOnFace(ray,triangle) {
     var n=vec3.create();
     vec3.cross(n,u,v);
     if(vec3.length(n)<EPS) {
-        console.log("getPointOnFace ret -1");
+//        console.log("getPointOnFace ret -1");
         return null;
     }
 
@@ -195,13 +195,13 @@ function getPointOnFace(ray,triangle) {
     var a=-vec3.dot(n,w0);
     var b=vec3.dot(n,ray.dir);
     if(Math.abs(b)<EPS) {
-        console.log("getPointOnFace ret -2 or -3");        
+//        console.log("getPointOnFace ret -2 or -3");        
         if(a==0) return null;
         else return null;
     }
     var r=a/b;
     if(r<-EPS) {
-        console.log("getPointOnFace ret -4");
+//        console.log("getPointOnFace ret -4");
         return null;
     }
     // intersect point on the plane
@@ -220,12 +220,12 @@ function getPointOnFace(ray,triangle) {
     var D=uv*uv-uu*vv;
     var s=(uv*wv-vv*wu)/D;
     if(s<-EPS || s>1.0+EPS) {
-        console.log("getPointOnFace ret -5");
+//        console.log("getPointOnFace ret -5");
         return null;
     }
     var t=(uv*wu-uu*wv)/D;
     if(t<-EPS||(s+t)>1.0+EPS) {
-        console.log("getPointOnFace ret -6");
+//        console.log("getPointOnFace ret -6");
         return null;
     }
 
@@ -235,6 +235,6 @@ function getPointOnFace(ray,triangle) {
         triangle.a[2] + u[2]*s + v[2]*t
     );
     var out = { u:u, v:v, s:s, t:t, pos:outpos };    
-    console.log("getPointOnFace:",u,v,s,t,out);
+//    console.log("getPointOnFace:",u,v,s,t,out);
     return out;
 }

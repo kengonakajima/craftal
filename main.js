@@ -34,6 +34,9 @@ document.addEventListener("keydown", function(e) {
 document.getElementById("screen").addEventListener("mousedown", function(e) {
     pointerLock();
 });
+document.addEventListener("mousemove", function(e) {
+    if(e.buttons>0) tryPencilDraw();
+});
 document.addEventListener("mousedown", function(e) {
     if(g_cursor_prop.cursor_hit_pos) {
 //        console.log("hpos:",g_cursor_prop.cursor_hit_pos, g_cursor_prop.cursor_hit_norm);        
@@ -53,44 +56,74 @@ document.addEventListener("mousedown", function(e) {
                 removeBlock(x,y,z);
             }
         } else if(g_cur_tool == TOOL_PENCIL) {
-            if(g_cursor_prop.cursor_hit_block_pos && g_cursor_prop.cursor_hit_norm ) {
-                var x=to_i(g_cursor_prop.cursor_hit_block_pos[0]);
-                var y=to_i(g_cursor_prop.cursor_hit_block_pos[1]);
-                var z=to_i(g_cursor_prop.cursor_hit_block_pos[2]);
-                var blk = findBlock(x,y,z);
-                if(!blk) console.error("blk must not null");
-                
-                var vv=getVertSet(blk,g_model_deck);
-                console.log("BLK:",blk,vv,g_cursor_prop.cursor_hit_norm);
-
-                // 全部の面について調べるか。
-                for(var i=0;i<vv.num_faces;i++) {
-                    var face = vv.faces[i];
-                    var t={};
-                    t.a=vv.positions[vv.faces[i][0]];
-                    t.b=vv.positions[vv.faces[i][1]];
-                    t.c=vv.positions[vv.faces[i][2]];
-                    var p=getPointOnFace(g_cursor_prop.simray,t);
-                    if(!p) continue;
-                    
-                    var uv_a=vv.uvs[vv.faces[i][0]];
-                    var uv_b=vv.uvs[vv.faces[i][1]];
-                    var uv_c=vv.uvs[vv.faces[i][2]];
-                    var uv_ab=vec2.fromValues(uv_b[0]-uv_a[0],uv_b[1]-uv_a[1]);
-                    var uv_ac=vec2.fromValues(uv_c[0]-uv_a[0],uv_c[1]-uv_a[1]);
-                    var uv_pos=vec2.fromValues(uv_a[0]+uv_ab[0]*p.s+uv_ac[0]*p.t,
-                                               uv_a[1]+uv_ab[1]*p.s+uv_ac[1]*p.t);
-                    var pix_x = to_i(uv_pos[0]*512);
-                    var pix_y = to_i(uv_pos[1]*512);
-                    g_model_img.setPixel(pix_x,pix_y,Color.fromValues(1,1,1,1));
-                    g_model_tex.setMoyaiImage(g_model_img);
-                }                    
-            }
+            tryPencilDraw();
         }
     }
 });
 
+function tryPencilDraw() {
+    if(g_cursor_prop.cursor_hit_block_pos && g_cursor_prop.cursor_hit_norm ) {
+        var x=to_i(g_cursor_prop.cursor_hit_block_pos[0]);
+        var y=to_i(g_cursor_prop.cursor_hit_block_pos[1]);
+        var z=to_i(g_cursor_prop.cursor_hit_block_pos[2]);
+        var blk = findBlock(x,y,z);
+        if(!blk) console.error("blk must not null");
+        
+        var vv=getVertSet(blk,g_model_deck);
+        //                console.log("BLK:",blk,vv,g_cursor_prop.cursor_hit_norm);
 
+        var drew=false;
+        // 全部の面について調べるか。一番近い面だけにhitする
+        var camloc=g_main_camera.loc;
+        var min_distance=9999;
+        var nearest_ind=-1;
+        for(var i=0;i<vv.num_faces;i++) {
+            var face = vv.faces[i];
+            var t={};
+            t.a=vv.positions[vv.faces[i][0]];
+            t.b=vv.positions[vv.faces[i][1]];
+            t.c=vv.positions[vv.faces[i][2]];
+            var p=getPointOnFace(g_cursor_prop.simray,t);
+            if(!p) continue;
+            var center=vec3.fromValues((t.a[0]+t.b[0]+t.c[0])/3,(t.a[1]+t.b[1]+t.c[1])/3,(t.a[2]+t.b[2]+t.c[2])/3);
+            var d=vec3.fromValues(camloc[0]-center[0],camloc[1]-center[1],camloc[2]-center[2]);
+            var l=vec3.length(d);
+            if(l<min_distance) {
+                min_distance=l;
+                nearest_ind=i;
+            }
+        }
+        for(var i=0;i<vv.num_faces;i++) {
+            var face = vv.faces[i];
+            var t={};
+            t.a=vv.positions[vv.faces[i][0]];
+            t.b=vv.positions[vv.faces[i][1]];
+            t.c=vv.positions[vv.faces[i][2]];
+            var p=getPointOnFace(g_cursor_prop.simray,t);
+            if(!p) {
+                continue;
+            }
+            if(i!=nearest_ind)continue;
+            
+            var uv_a=vv.uvs[vv.faces[i][0]];
+            var uv_b=vv.uvs[vv.faces[i][1]];
+            var uv_c=vv.uvs[vv.faces[i][2]];
+            var uv_ab=vec2.fromValues(uv_b[0]-uv_a[0],uv_b[1]-uv_a[1]);
+            var uv_ac=vec2.fromValues(uv_c[0]-uv_a[0],uv_c[1]-uv_a[1]);
+            var uv_pos=vec2.fromValues(uv_a[0]+uv_ab[0]*p.s+uv_ac[0]*p.t,
+                                       uv_a[1]+uv_ab[1]*p.s+uv_ac[1]*p.t);
+            var pix_x = to_i(uv_pos[0]*512);
+            var pix_y = to_i(uv_pos[1]*512);
+            if(pix_x==g_cursor_prop.last_draw_pix_pos[0] && pix_y==g_cursor_prop.last_draw_pix_pos[1]) {
+                continue;
+            }
+            g_model_img.setPixel(pix_x,pix_y,Color.fromValues(1,1,1,1));
+            drew=true;
+            g_cursor_prop.last_draw_pix_pos=vec2.fromValues(pix_x,pix_y);
+        }
+        if(drew) g_model_tex.setMoyaiImage(g_model_img);
+    }
+}
 
 function pointerLock() {
     var body = document.body;
@@ -358,7 +391,7 @@ function removeBlock(x,y,z) {
 var linemat=new PrimColorShaderMaterial();
 
 var g_cursor_prop = new Prop3D();
-//g_cursor_prop.setGeom(linegeom);
+g_cursor_prop.last_draw_pix_pos=vec2.create();
 g_cursor_prop.setMaterial(linemat);
 g_main_layer.insertProp(g_cursor_prop);
 g_cursor_prop.setBlockLoc = function(x,y,z) {
