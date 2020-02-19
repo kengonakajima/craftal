@@ -297,7 +297,7 @@ function findBlock(x,y,z) {
 var g_colshader = new DefaultColorShaderMaterial();
 var g_collitshader = new DefaultColorLitShaderMaterial();
 g_collitshader.setAmbientColor(vec3.fromValues(0.3,0.3,0.3));
-
+g_collitshader.setLightDirection(vec3.fromValues(0.7,0.6,0.8));
 
 function createGroundChunk(x0,z0,x1,z1) {
     var chk=new Chunk(g_atlas_deck);
