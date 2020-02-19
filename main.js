@@ -379,6 +379,21 @@ function getVertSet(blk) {
             uv_xn_lb, uv_xn_rb, uv_xn_rt, uv_xn_lt, // daeh
         ];
 
+
+        var n_xp=vec3.fromValues(1,0,0);
+        var n_xn=vec3.fromValues(-1,0,0);
+        var n_yp=vec3.fromValues(0,1,0);
+        var n_yn=vec3.fromValues(0,-1,0);
+        var n_zp=vec3.fromValues(0,0,1);
+        var n_zn=vec3.fromValues(0,0,-1);        
+        out.normals = [
+            n_yn, n_yn, n_yn, n_yn, // abcd
+            n_yp, n_yp, n_yp, n_yp, // efgh
+            n_zp, n_zp, n_zp, n_zp, // abfe
+            n_zn, n_zn, n_zn, n_zn, // cdhg
+            n_xp, n_xp, n_xp, n_xp, // +x
+            n_xn, n_xn, n_xn, n_xn, // -x
+        ];
         
         var col=blk.color;
         var ypcol=vec4.clone(col);
@@ -473,6 +488,19 @@ function getVertSet(blk) {
             uv_zn_lb, uv_zn_rb, uv_zn_lt, // cdg
         ];
 
+        var n_xp=vec3.fromValues(1,0,0);
+        var n_slope=vec3.fromValues(-1,1,0);
+        vec3.normalize(n_slope,n_slope);
+        var n_yn=vec3.fromValues(0,-1,0);
+        var n_zp=vec3.fromValues(0,0,1);
+        var n_zn=vec3.fromValues(0,0,-1);        
+        out.normals = [
+            n_yn, n_yn, n_yn, n_yn, // abcd
+            n_slope, n_slope, n_slope, n_slope, // slope
+            n_xp, n_xp, n_xp, n_xp, // bcgf
+            n_zp, n_zp, n_zp, // abf
+            n_zn, n_zn, n_zn, // cdg
+        ];
         
         var col=blk.color;
         var slopecol=vec4.clone(col);
@@ -640,6 +668,7 @@ class Chunk extends Prop3D {
             for(var i=0;i<vv.num_verts;i++) geom.setPosition3v(i+vi,vv.positions[i]);
             for(var i=0;i<vv.num_verts;i++) geom.setUV2v(i+vi,vv.uvs[i]);
             for(var i=0;i<vv.num_verts;i++) geom.setColor4v(i+vi,vv.colors[i]);
+            for(var i=0;i<vv.num_verts;i++) geom.setNormal3v(i+vi,vv.normals[i]);            
             for(var i=0;i<vv.num_faces;i++) geom.setFaceInds(i+fi,vv.faces[i][0]+vi, vv.faces[i][1]+vi,vv.faces[i][2]+vi);
             
             vi+=vv.num_verts;
@@ -668,6 +697,8 @@ function findBlock(x,y,z) {
 
 var g_colshader = new DefaultColorShaderMaterial();
 var g_collitshader = new DefaultColorLitShaderMaterial();
+g_collitshader.setAmbientColor(vec3.fromValues(0.5,0.5,0.5));
+g_collitshader.setLightDirection(vec3.fromValues(1,0.6,0.4));
 
 function createGroundChunk(x0,z0,x1,z1) {
     var chk=new Chunk(g_atlas_tex);
@@ -675,6 +706,7 @@ function createGroundChunk(x0,z0,x1,z1) {
         for(var x=x0;x<=x1;x++) {
             var r=1;
             if((x+z)%2==0) r=0.8;
+            r*=0.3;
             var col=vec4.fromValues(r,r,r,1);
             chk.setBlock(x,-1,z,SHAPE_CUBE,col,IDX_GROUND);
         }
