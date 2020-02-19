@@ -541,7 +541,7 @@ function animate() {
 
     if(g_main_camera) {
         var t=now()-started_at;
-        var gravity = -10;
+        var gravity = -12;
         if(g_main_camera.flying) {
             gravity=0;
         } 
@@ -554,8 +554,15 @@ function animate() {
         if(nextloc[0]>g_ground_sz) nextloc[0]=g_ground_sz;
         if(nextloc[2]<-g_ground_sz) nextloc[2]=-g_ground_sz;
         if(nextloc[2]>g_ground_sz) nextloc[2]=g_ground_sz;
-        if(nextloc[1]<1) {
-            nextloc[1]=1;
+
+        var ftsz=0.3;
+        var footblk0 = findBlock(to_i(nextloc[0]-ftsz),to_i(nextloc[1])-1,to_i(nextloc[2]-ftsz));
+        var footblk1 = findBlock(to_i(nextloc[0]-ftsz),to_i(nextloc[1])-1,to_i(nextloc[2]+ftsz));
+        var footblk2 = findBlock(to_i(nextloc[0]+ftsz),to_i(nextloc[1])-1,to_i(nextloc[2]-ftsz));
+        var footblk3 = findBlock(to_i(nextloc[0]+ftsz),to_i(nextloc[1])-1,to_i(nextloc[2]+ftsz));        
+
+        if(footblk0 || footblk1 || footblk2 || footblk3 ) {
+            nextloc[1]=to_i(nextloc[1])+1;
             g_main_camera.vel[1]=0;
         }
         vec3.set(g_main_camera.loc,nextloc[0],nextloc[1],nextloc[2]);
@@ -572,7 +579,7 @@ function animate() {
             if(g_keyboard.getKey('s')) front-=1;
             if(g_keyboard.getKey('Escape')) pointerUnlock();
             if(g_keyboard.getKey(' ')) {
-                g_main_camera.vel[1]=3;
+                g_main_camera.vel[1]=5;
                 var t=now();
                 if(g_main_camera.jump_at && g_main_camera.last_jump_key==false) {
                     var dt=t-g_main_camera.jump_at;
@@ -606,8 +613,8 @@ function animate() {
             if(yaw<-Math.PI/2) yaw=-Math.PI/2;
             pitch+=dx/250;
 
-            g_main_camera.vel[0]*=0.92;
-            g_main_camera.vel[2]*=0.92;            
+            g_main_camera.vel[0]*=0.9;
+            g_main_camera.vel[2]*=0.9;            
 
             var side_pitch=pitch;
             if(side<0) side_pitch=pitch-Math.PI/2;
