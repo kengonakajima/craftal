@@ -84,7 +84,6 @@ document.addEventListener("mousedown", function(e) {
                     var pix_y = to_i(uv_pos[1]*256);
                     g_model_img.setPixel(pix_x,pix_y,Color.fromValues(1,1,1,1));
                     g_model_tex.setMoyaiImage(g_model_img);
-                    console.log("hoge",uv_ab,uv_ac,uv_a,uv_pos,pix_x,pix_y);
                 }                    
             }
         }
@@ -231,12 +230,13 @@ function allocateUVIndex() {
     return undefined;
 }
 function freeUVIndex(ind) {
-    if(ind===undefined || ind==null) return;
+    if(ind===undefined || ind===null) return;
     ind|=0;
     if(ind<0||ind>=g_uv_alloc_table.length) {
         console.error("freeUVIndex: invalid ind:",ind);
         return;
     }
+    console.log("freeUVIndex: freed:",ind);
     g_uv_alloc_table[ind]=-1;
 }
 
