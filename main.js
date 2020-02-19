@@ -149,7 +149,7 @@ SCRW*=pixelRatio;
 SCRH*=pixelRatio;
 console.log("Screen size:",SCRW,SCRH);
 Moyai.init(SCRW,SCRH);
-Moyai.clearColor=Color.fromValues(0.5,0.5,0.5,1);
+Moyai.clearColor=Color.fromValues(0.2,0.2,0.2,1);
 var screen = document.getElementById("screen");
 var canvas=Moyai.getDomElement();
 canvas.style="width:100%; height:100%;";
@@ -697,8 +697,8 @@ function findBlock(x,y,z) {
 
 var g_colshader = new DefaultColorShaderMaterial();
 var g_collitshader = new DefaultColorLitShaderMaterial();
-g_collitshader.setAmbientColor(vec3.fromValues(0.5,0.5,0.5));
-g_collitshader.setLightDirection(vec3.fromValues(1,0.6,0.4));
+g_collitshader.setAmbientColor(vec3.fromValues(0.3,0.3,0.3));
+
 
 function createGroundChunk(x0,z0,x1,z1) {
     var chk=new Chunk(g_atlas_tex);
@@ -706,7 +706,7 @@ function createGroundChunk(x0,z0,x1,z1) {
         for(var x=x0;x<=x1;x++) {
             var r=1;
             if((x+z)%2==0) r=0.8;
-            r*=0.3;
+            r*=0.5;
             var col=vec4.fromValues(r,r,r,1);
             chk.setBlock(x,-1,z,SHAPE_CUBE,col,IDX_GROUND);
         }
@@ -1088,6 +1088,12 @@ function animate() {
 
             g_main_camera.setLookAt(g_main_camera.nose, vec3.fromValues(0,1,0));            
         }
+        var camdir=vec3.fromValues(
+            g_main_camera.loc[0] - g_main_camera.nose[0],
+            g_main_camera.loc[1] - g_main_camera.nose[1],
+            g_main_camera.loc[2] - g_main_camera.nose[2]            
+        );
+        g_collitshader.setLightDirection(camdir);
     }
     
     
