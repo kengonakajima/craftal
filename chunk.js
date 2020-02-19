@@ -32,7 +32,8 @@
 //  -d,-d,d
 //
 //
-function getVertSet(blk) {
+function getVertSet(blk,dk) {
+    if(!dk) console.error("getVertSet: need dk", dk);
     var x=blk.x, y=blk.y, z=blk.z;
     var out={};
     if(blk.shape==SHAPE_CUBE) {
@@ -58,32 +59,32 @@ function getVertSet(blk) {
         ];
         
         var uvary = new Float32Array(4);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xp,0,0,0);
+        dk.getUVFromIndex(uvary,blk.uvinds[0],0,0,0);
         var uv_xp_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_xp_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_xp_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_xp_rb=vec2.fromValues(uvary[2],uvary[3]);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xn,0,0,0);
+        dk.getUVFromIndex(uvary,blk.uvinds[1],0,0,0);
         var uv_xn_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_xn_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_xn_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_xn_rb=vec2.fromValues(uvary[2],uvary[3]);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yp,0,0,0);        
+        dk.getUVFromIndex(uvary,blk.uvinds[2],0,0,0);        
         var uv_yp_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_yp_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_yp_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_yp_rb=vec2.fromValues(uvary[2],uvary[3]);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yn,0,0,0);        
+        dk.getUVFromIndex(uvary,blk.uvinds[3],0,0,0);        
         var uv_yn_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_yn_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_yn_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_yn_rb=vec2.fromValues(uvary[2],uvary[3]);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zp,0,0,0);        
+        dk.getUVFromIndex(uvary,blk.uvinds[4],0,0,0);        
         var uv_zp_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_zp_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_zp_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_zp_rb=vec2.fromValues(uvary[2],uvary[3]);                        
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zn,0,0,0);        
+        dk.getUVFromIndex(uvary,blk.uvinds[5],0,0,0);        
         var uv_zn_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_zn_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_zn_lb=vec2.fromValues(uvary[0],uvary[3]);
@@ -173,27 +174,27 @@ function getVertSet(blk) {
         ];
 
         var uvary = new Float32Array(4);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_xp,0,0,0);
+        dk.getUVFromIndex(uvary,blk.uvinds[0],0,0,0);
         var uv_xp_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_xp_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_xp_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_xp_rb=vec2.fromValues(uvary[2],uvary[3]);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_slope,0,0,0);
+        dk.getUVFromIndex(uvary,blk.uvinds[1],0,0,0);
         var uv_slope_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_slope_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_slope_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_slope_rb=vec2.fromValues(uvary[2],uvary[3]);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_yn,0,0,0);        
+        dk.getUVFromIndex(uvary,blk.uvinds[2],0,0,0);        
         var uv_yn_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_yn_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_yn_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_yn_rb=vec2.fromValues(uvary[2],uvary[3]);
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zp,0,0,0);        
+        dk.getUVFromIndex(uvary,blk.uvinds[3],0,0,0);        
         var uv_zp_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_zp_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_zp_lb=vec2.fromValues(uvary[0],uvary[3]);
         var uv_zp_rb=vec2.fromValues(uvary[2],uvary[3]);                        
-        g_atlas_deck.getUVFromIndex(uvary,blk.uvind_zn,0,0,0);        
+        dk.getUVFromIndex(uvary,blk.uvinds[4],0,0,0);        
         var uv_zn_lt=vec2.fromValues(uvary[0],uvary[1]);
         var uv_zn_rt=vec2.fromValues(uvary[2],uvary[1]);
         var uv_zn_lb=vec2.fromValues(uvary[0],uvary[3]);
@@ -264,13 +265,14 @@ var g_chunk_id_gen=1;
 class Chunk extends Prop3D {
     // 巨大な地形を表現する必要がないので、3次元配列ボクセルじゃなくて、単純な配列にしておく
     // コリジョンも地面だけでいい気がしてきた.
-    constructor(tex) {
+    constructor(deck) {
         super();
         this.blocks=[];
 
+        this.deck=deck;
         this.enable_frustum_culling = false;
         this.setMaterial(g_collitshader);
-        this.setTexture(tex);
+        this.setTexture(deck.moyai_tex);
         this.setScl(1,1,1);
         this.setLoc(0,0,0);
         this.setColor(vec4.fromValues(1,1,1,1));
@@ -289,7 +291,10 @@ class Chunk extends Prop3D {
         return -1;
     }
     setBlock(ix,iy,iz,shapeid,col4,dkind) {
-//        if(dkind===undefined) console.log("CHKSETBLOCK:",ix,iy,iz,"sh:",shapeid,"col:",col4,"dkind:",dkind);
+        if(getUVIndexSpace()<6) {
+            console.log("uvindex no space left!");
+            return;
+        }
         ix=to_i(ix);
         iy=to_i(iy);
         iz=to_i(iz);        
@@ -300,37 +305,16 @@ class Chunk extends Prop3D {
         } else {
             this.blocks.push(block);
         }
-        if(dkind===undefined) {
-            
-            var xpb=this.findBlock(ix+1,iy,iz);
-            var xnb=this.findBlock(ix-1,iy,iz);
-            var ypb=this.findBlock(ix,iy+1,iz);
-            var ynb=this.findBlock(ix,iy-1,iz);
-            var zpb=this.findBlock(ix,iy,iz+1);
-            var znb=this.findBlock(ix,iy,iz-1);
+        var num_tile_need;
+        if(shapeid==SHAPE_CUBE) num_tile_need=6; else if(shapeid==SHAPE_SLOPE) num_tile_need=5;
+        block.uvinds=new Int32Array(num_tile_need);        
+        for(var i=0;i<num_tile_need;i++) {
 
-            if(shapeid==SHAPE_CUBE) {
-                if(xpb<0) block.uvind_xp=allocateUVIndex();
-                if(xnb<0) block.uvind_xn=allocateUVIndex();
-                if(ypb<0) block.uvind_yp=allocateUVIndex();
-                if(ynb<0) block.uvind_yn=allocateUVIndex();
-                if(zpb<0) block.uvind_zp=allocateUVIndex();
-                if(znb<0) block.uvind_zn=allocateUVIndex();                
-            } else if(shapeid==SHAPE_SLOPE) {
-                if(xpb<0) block.uvind_xp=allocateUVIndex();
-                if(zpb<0) block.uvind_zp=allocateUVIndex();
-                if(znb<0) block.uvind_zn=allocateUVIndex();
-                if(ynb<0) block.uvind_yn=allocateUVIndex();
-                // slope side
-                if(xnb<0 || ypb<0 || znb<0 || zpb<0 ) block.uvind_slope=allocateUVIndex();
+            if(dkind===undefined) {            
+                block.uvinds[i]=allocateUVIndex(); // must success.
             } else {
-                console.error("shape id not impl:",shapeid);
+                block.uvinds[i]=dkind;
             }
-            
-            
-
-        } else {
-            block.uvind_xp=block.uvind_xn=block.uvind_yp=block.uvind_yn=block.uvind_zp=block.uvind_zn=dkind;
         }
     }
     removeBlock(ix,iy,iz) {
@@ -338,12 +322,7 @@ class Chunk extends Prop3D {
             var b=this.blocks[i];
             if(b.x==ix && b.y==iy && b.z==iz) {
                 this.blocks.splice(i,1);
-                freeUVIndex(b.uvind_xp);
-                freeUVIndex(b.uvind_xn);
-                freeUVIndex(b.uvind_yp);
-                freeUVIndex(b.uvind_yn);
-                freeUVIndex(b.uvind_zp);
-                freeUVIndex(b.uvind_zn);                
+                for(var i=0;i<b.uvinds.length;i++) freeUVIndex(b.uvinds[i]);
                 console.log("removeBlock: done,",ix,iy,iz);
                 return true;
             }
@@ -383,7 +362,7 @@ class Chunk extends Prop3D {
         for(var bi=0;bi<num_block;bi++) {
             var block=this.blocks[bi];
             // 0,0,0のブロック基準点は(0,0,0)にあるようにする
-            var vv=getVertSet(block);
+            var vv=getVertSet(block,this.deck);
             for(var i=0;i<vv.num_verts;i++) geom.setPosition3v(i+vi,vv.positions[i]);
             for(var i=0;i<vv.num_verts;i++) geom.setUV2v(i+vi,vv.uvs[i]);
             for(var i=0;i<vv.num_verts;i++) geom.setColor4v(i+vi,vv.colors[i]);

@@ -198,25 +198,23 @@ g_atlas_deck.setTexture(g_atlas_tex);
 g_atlas_deck.setSize(16,16,16,16);
 
 var g_model_img = new MoyaiImage();
-//g_model_img.setSize(256,256);
-g_model_img.loadPNG("./modeltex.png",256,256);
+g_model_img.loadPNG("./modeltex.png",512,512);
 
 
 var g_model_tex = new Texture();
 g_model_img.onload = function() {
     g_model_tex.setMoyaiImage(g_model_img);
+    g_model_deck.setTexture(g_model_tex);
 }
-//g_model_tex.loadPNG("./modeltex.png",256,256);
-
 
 var g_model_deck = new TileDeck();
 g_model_deck.setTexture(g_model_tex);
-g_model_deck.setSize(16,16,16,16);
+g_model_deck.setSize(32,32,16,16);
 
 ////////////////////////
 
 // model texture UVs allocation
-var g_uv_alloc_table = new Int32Array(16*16); 
+var g_uv_alloc_table = new Int32Array(32*32); 
 for(var i in g_uv_alloc_table) g_uv_alloc_table[i]=-1;
 function allocateUVIndex() {
     for(var i in g_uv_alloc_table) {
@@ -239,7 +237,13 @@ function freeUVIndex(ind) {
     console.log("freeUVIndex: freed:",ind);
     g_uv_alloc_table[ind]=-1;
 }
-
+function getUVIndexSpace() {
+    var used=0;
+    for(var i=0;i<g_uv_alloc_table.length;i++) {
+        if(g_uv_alloc_table[i]==1)used++;
+    }
+    return g_uv_alloc_table.length-used;
+}
 ////////////////////////
 
 ////////////////////
@@ -263,7 +267,7 @@ g_collitshader.setAmbientColor(vec3.fromValues(0.3,0.3,0.3));
 
 
 function createGroundChunk(x0,z0,x1,z1) {
-    var chk=new Chunk(g_atlas_tex);
+    var chk=new Chunk(g_atlas_deck);
     for(var z=z0;z<=z1;z++) {
         for(var x=x0;x<=x1;x++) {
             var r=1;
@@ -316,7 +320,7 @@ function putBlock(x,y,z,shape,col,dkind) {
 }
 
 function createNewChunk(x,y,z,shape,col,dkind) {
-    var chk=new Chunk(g_model_tex);
+    var chk=new Chunk(g_model_deck);
     chk.setBlock(x,y,z,shape,col,dkind);
     chk.updateMesh();
     g_main_layer.insertProp(chk);
@@ -364,7 +368,7 @@ g_cursor_prop.setBlockLoc = function(x,y,z) {
         return;
     }
     var relv=vec3.fromValues(-x,-y,-z);
-    var vv=getVertSet(blk);
+    var vv=getVertSet(blk,g_atlas_deck);
     var num_lines = vv.num_faces * 3;
     var linegeom = new LineGeometry(num_lines*2,num_lines);
     for(var i=0;i<vv.num_faces;i++) {
