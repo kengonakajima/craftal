@@ -60,7 +60,7 @@ document.addEventListener("mousedown", function(e) {
                 var blk = findBlock(x,y,z);
                 if(!blk) console.error("blk must not null");
                 
-                var vv=getVertSet(blk);
+                var vv=getVertSet(blk,g_model_deck);
                 console.log("BLK:",blk,vv,g_cursor_prop.cursor_hit_norm);
 
                 // 全部の面について調べるか。
@@ -80,8 +80,8 @@ document.addEventListener("mousedown", function(e) {
                     var uv_ac=vec2.fromValues(uv_c[0]-uv_a[0],uv_c[1]-uv_a[1]);
                     var uv_pos=vec2.fromValues(uv_a[0]+uv_ab[0]*p.s+uv_ac[0]*p.t,
                                                uv_a[1]+uv_ab[1]*p.s+uv_ac[1]*p.t);
-                    var pix_x = to_i(uv_pos[0]*256);
-                    var pix_y = to_i(uv_pos[1]*256);
+                    var pix_x = to_i(uv_pos[0]*512);
+                    var pix_y = to_i(uv_pos[1]*512);
                     g_model_img.setPixel(pix_x,pix_y,Color.fromValues(1,1,1,1));
                     g_model_tex.setMoyaiImage(g_model_img);
                 }                    
